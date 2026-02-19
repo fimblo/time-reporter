@@ -235,6 +235,7 @@ export function TrackingView(props: TrackingViewProps) {
                     <thead>
                       <tr>
                         <th>Date</th>
+                        <th>Hours</th>
                         <th>Minutes</th>
                       </tr>
                     </thead>
@@ -242,7 +243,9 @@ export function TrackingView(props: TrackingViewProps) {
                       {editableDates.map((date) => {
                         const computed = computeMinutesToday(editingTask, date, now)
                         const override = editingTask.overrides?.find((o) => o.date === date)
-                        const value = override?.minutesOverride ?? computed
+                        const totalMinutes = override?.minutesOverride ?? computed
+                        const hours = Math.floor(totalMinutes / 60)
+                        const mins = totalMinutes % 60
                         return (
                           <tr key={date}>
                             <td>{date}</td>
@@ -250,10 +253,24 @@ export function TrackingView(props: TrackingViewProps) {
                               <input
                                 type="number"
                                 min={0}
-                                value={value}
+                                aria-label={`Hours for ${date}`}
+                                value={hours}
                                 onChange={(e) => {
-                                  const minutes = Number.parseInt(e.target.value, 10) || 0
-                                  updateOverrideMinutes(date, minutes)
+                                  const h = Number.parseInt(e.target.value, 10) || 0
+                                  updateOverrideMinutes(date, h * 60 + mins)
+                                }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                min={0}
+                                max={59}
+                                aria-label={`Minutes for ${date}`}
+                                value={mins}
+                                onChange={(e) => {
+                                  const m = Math.min(59, Math.max(0, Number.parseInt(e.target.value, 10) || 0))
+                                  updateOverrideMinutes(date, hours * 60 + m)
                                 }}
                               />
                             </td>
