@@ -15,6 +15,7 @@ interface TrackingViewProps {
   onStartTimer: (taskId: string) => void
   onPauseTimer: () => void
   onUpdateTask: (task: Task) => void
+  onDeleteTask: (taskId: string) => void
 }
 
 interface EditableTask extends Task {
@@ -49,7 +50,7 @@ function todayKey(now: Date): string {
 }
 
 export function TrackingView(props: TrackingViewProps) {
-  const { tasks, now, activeTaskId, onCreateTask, onStartTimer, onPauseTimer, onUpdateTask } =
+  const { tasks, now, activeTaskId, onCreateTask, onStartTimer, onPauseTimer, onUpdateTask, onDeleteTask } =
     props
   const [client, setClient] = useState('')
   const [topic, setTopic] = useState('')
@@ -190,6 +191,7 @@ export function TrackingView(props: TrackingViewProps) {
                       <button onClick={() => onStartTimer(task.id)}>Start</button>
                     )}
                     <button onClick={() => openEdit(task)}>Edit</button>
+                    <button onClick={() => onDeleteTask(task.id)}>Delete</button>
                   </div>
                 </li>
               )

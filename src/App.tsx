@@ -62,6 +62,13 @@ function App() {
     }))
   }
 
+  function handleDeleteTask(taskId: string) {
+    engine.updateState((prev) => ({
+      ...prev,
+      tasks: prev.tasks.filter((t) => t.id !== taskId),
+    }))
+  }
+
   return (
     <div className="app-root">
       <aside className="sidebar">
@@ -110,6 +117,7 @@ function App() {
               onStartTimer={engine.startTimer}
               onPauseTimer={engine.pauseTimer}
               onUpdateTask={handleUpdateTask}
+              onDeleteTask={handleDeleteTask}
             />
           ) : (
             <OverviewView rows={summaryRows} />

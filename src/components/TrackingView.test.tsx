@@ -16,6 +16,7 @@ describe('TrackingView', () => {
         onStartTimer={vi.fn()}
         onPauseTimer={vi.fn()}
         onUpdateTask={vi.fn()}
+        onDeleteTask={vi.fn()}
       />,
     )
     const clientInput = screen.getByPlaceholderText(/client name/i)
@@ -43,6 +44,7 @@ describe('TrackingView', () => {
         onStartTimer={vi.fn()}
         onPauseTimer={vi.fn()}
         onUpdateTask={vi.fn()}
+        onDeleteTask={vi.fn()}
       />,
     )
     expect(screen.getByText('Acme Corp')).toBeInTheDocument()
@@ -59,6 +61,7 @@ describe('TrackingView', () => {
         onStartTimer={vi.fn()}
         onPauseTimer={vi.fn()}
         onUpdateTask={vi.fn()}
+        onDeleteTask={vi.fn()}
       />,
     )
     fireEvent.click(screen.getByRole('button', { name: /create task/i }))
@@ -89,6 +92,7 @@ describe('TrackingView', () => {
         onStartTimer={vi.fn()}
         onPauseTimer={vi.fn()}
         onUpdateTask={vi.fn()}
+        onDeleteTask={vi.fn()}
       />,
     )
     expect(screen.getByText(/1h 30m today/)).toBeInTheDocument()
@@ -120,6 +124,7 @@ describe('TrackingView', () => {
         onStartTimer={vi.fn()}
         onPauseTimer={vi.fn()}
         onUpdateTask={vi.fn()}
+        onDeleteTask={vi.fn()}
       />,
     )
     const timeEl = screen.getByText(/today$/)
@@ -135,11 +140,71 @@ describe('TrackingView', () => {
         onStartTimer={vi.fn()}
         onPauseTimer={vi.fn()}
         onUpdateTask={vi.fn()}
+        onDeleteTask={vi.fn()}
       />,
     )
     const laterText = screen.getByText(/today$/).textContent ?? ''
     expect(laterText).not.toBe(initialText)
     expect(laterText).toMatch(/\d+(h|m)/)
+  })
+
+  it('calls onDeleteTask with task id when Delete is clicked', () => {
+    const task: Task = {
+      id: 'task-to-delete',
+      client: 'Acme',
+      topic: 'Coaching',
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      intervals: [],
+    }
+    const onDeleteTask = vi.fn()
+    render(
+      <TrackingView
+        tasks={[task]}
+        now={now}
+        onCreateTask={vi.fn()}
+        onStartTimer={vi.fn()}
+        onPauseTimer={vi.fn()}
+        onUpdateTask={vi.fn()}
+        onDeleteTask={onDeleteTask}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+    expect(onDeleteTask).toHaveBeenCalledWith('task-to-delete')
+  })
+
+  it('each task row has a Delete button', () => {
+    const tasks: Task[] = [
+      {
+        id: 't1',
+        client: 'Client A',
+        topic: 'Topic 1',
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        intervals: [],
+      },
+      {
+        id: 't2',
+        client: 'Client B',
+        topic: 'Topic 2',
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        intervals: [],
+      },
+    ]
+    render(
+      <TrackingView
+        tasks={tasks}
+        now={now}
+        onCreateTask={vi.fn()}
+        onStartTimer={vi.fn()}
+        onPauseTimer={vi.fn()}
+        onUpdateTask={vi.fn()}
+        onDeleteTask={vi.fn()}
+      />,
+    )
+    const deleteButtons = screen.getAllByRole('button', { name: /delete/i })
+    expect(deleteButtons).toHaveLength(2)
   })
 
   it('displays time with seconds for the active task so it can increase every second', () => {
@@ -168,6 +233,7 @@ describe('TrackingView', () => {
         onStartTimer={vi.fn()}
         onPauseTimer={vi.fn()}
         onUpdateTask={vi.fn()}
+        onDeleteTask={vi.fn()}
       />,
     )
     expect(screen.getByText(/1s today|0m 1s today|\d+s today/)).toBeInTheDocument()
