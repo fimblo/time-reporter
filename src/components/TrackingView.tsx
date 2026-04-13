@@ -24,22 +24,7 @@ interface EditableTask extends Task {
 }
 
 function computeMinutesToday(task: Task, todayKey: string, now: Date): number {
-  let minutes = 0
-  for (const interval of task.intervals) {
-    const chunks = splitIntervalByDay(interval, now)
-    for (const chunk of chunks) {
-      if (chunk.date === todayKey) {
-        minutes += chunk.minutes
-      }
-    }
-  }
-  if (task.overrides) {
-    const override = task.overrides.find((o) => o.date === todayKey)
-    if (override) {
-      minutes = override.minutesOverride
-    }
-  }
-  return minutes
+  return Math.floor(computeSecondsToday(task, todayKey, now) / 60)
 }
 
 function todayKey(now: Date): string {
@@ -246,9 +231,7 @@ export function TrackingView(props: TrackingViewProps) {
                     </thead>
                     <tbody>
                       {editableDates.map((date) => {
-                        const computed = computeMinutesToday(editingTask, date, now)
-                        const override = editingTask.overrides?.find((o) => o.date === date)
-                        const totalMinutes = override?.minutesOverride ?? computed
+                        const totalMinutes = computeMinutesToday(editingTask, date, now)
                         const hours = Math.floor(totalMinutes / 60)
                         const mins = totalMinutes % 60
                         return (
