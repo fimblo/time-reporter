@@ -71,6 +71,28 @@ describe('computeSecondsToday', () => {
     }
     expect(computeSecondsToday(task, '2026-02-19', new Date('2026-02-19T12:00:00.000Z'))).toBe(90)
   })
+  it('legacy override + running timer: ticks from override base', () => {
+    const task: Task = {
+      id: 't1', client: 'A', topic: 'T', createdAt: '', updatedAt: '',
+      intervals: [{ id: 'i1', taskId: 't1', start: '2026-02-19T10:00:00.000Z', end: null }],
+      overrides: [{ date: '2026-02-19', minutesOverride: 90 }],
+    }
+    const now = new Date('2026-02-19T10:00:10.000Z')
+    expect(computeSecondsToday(task, '2026-02-19', now)).toBe(90 * 60 + 10)
+  })
+  it('modern override + post-override interval: base + post seconds', () => {
+    const setAt = '2026-02-19T11:00:00.000Z'
+    const task: Task = {
+      id: 't1', client: 'A', topic: 'T', createdAt: '', updatedAt: '',
+      intervals: [
+        { id: 'i1', taskId: 't1', start: '2026-02-19T09:00:00.000Z', end: '2026-02-19T10:00:00.000Z' }, // pre-override
+        { id: 'i2', taskId: 't1', start: '2026-02-19T12:00:00.000Z', end: null }, // post-override, running
+      ],
+      overrides: [{ date: '2026-02-19', minutesOverride: 90, setAt }],
+    }
+    const now = new Date('2026-02-19T12:00:05.000Z')
+    expect(computeSecondsToday(task, '2026-02-19', now)).toBe(90 * 60 + 5)
+  })
   it('returns live seconds for active interval on that day', () => {
     const task: Task = {
       id: 't1',
@@ -166,7 +188,7 @@ describe('buildDailySummary', () => {
     expect(rows[0].topic).toBe('Coaching')
     expect(rows[0].minutes).toBe(60)
   })
-  it('applies overrides', () => {
+  it('legacy override (no setAt) replaces interval minutes', () => {
     const task: Task = {
       id: 't1',
       client: 'Acme',
@@ -186,6 +208,24 @@ describe('buildDailySummary', () => {
     const rows = buildDailySummary([task], new Date('2026-02-19T12:00:00.000Z'))
     expect(rows.length).toBe(1)
     expect(rows[0].minutes).toBe(90)
+  })
+  it('modern override (with setAt) acts as base, post-override intervals add on top', () => {
+    const setAt = '2026-02-19T11:00:00.000Z'
+    const task: Task = {
+      id: 't1',
+      client: 'Acme',
+      topic: 'Coaching',
+      createdAt: '2026-02-19T00:00:00.000Z',
+      updatedAt: '2026-02-19T00:00:00.000Z',
+      intervals: [
+        { id: 'i1', taskId: 't1', start: '2026-02-19T09:00:00.000Z', end: '2026-02-19T10:00:00.000Z' }, // 60 min, before setAt
+        { id: 'i2', taskId: 't1', start: '2026-02-19T12:00:00.000Z', end: '2026-02-19T12:30:00.000Z' }, // 30 min, after setAt
+      ],
+      overrides: [{ date: '2026-02-19', minutesOverride: 90, setAt }],
+    }
+    const rows = buildDailySummary([task], new Date('2026-02-19T13:00:00.000Z'))
+    expect(rows.length).toBe(1)
+    expect(rows[0].minutes).toBe(120) // 90 base + 30 post-override
   })
 })
 

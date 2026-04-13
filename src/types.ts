@@ -10,6 +10,7 @@ export interface Interval {
 export interface DailyOverride {
   date: string // YYYY-MM-DD in local time
   minutesOverride: number
+  setAt?: string // ISO timestamp when override was last saved; undefined = legacy (replace semantics)
 }
 
 export interface Task {

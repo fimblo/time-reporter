@@ -95,9 +95,17 @@ export function buildDailySummary(tasks: Task[], now: Date = new Date()): DailyS
   for (const task of tasks) {
     const baseKey = `${task.client}||${task.topic}||${task.id}`
 
+    // Pass 1: intervals — skip any that are covered by an override.
+    // Legacy overrides (no setAt) cover all intervals on that date.
+    // Modern overrides (with setAt) cover only intervals that started before setAt.
     for (const interval of task.intervals) {
       const chunks = splitIntervalByDay(interval, now)
       for (const chunk of chunks) {
+        const override = task.overrides?.find((o) => o.date === chunk.date)
+        if (override) {
+          if (!override.setAt) continue // legacy: override replaces everything
+          if (interval.start <= override.setAt) continue // pre-override interval
+        }
         const key = `${chunk.date}||${baseKey}`
         const existing = byKey.get(key)
         if (existing) {
@@ -114,12 +122,15 @@ export function buildDailySummary(tasks: Task[], now: Date = new Date()): DailyS
       }
     }
 
+    // Pass 2: overrides — add as the base for each overridden date.
     if (task.overrides) {
       for (const override of task.overrides) {
         const key = `${override.date}||${baseKey}`
         const existing = byKey.get(key)
         if (existing) {
-          existing.minutes = override.minutesOverride
+          // Modern override: post-override interval minutes already in map, add base on top.
+          // Legacy override: map is empty for this date (all intervals skipped), so += is same as =.
+          existing.minutes += override.minutesOverride
         } else {
           byKey.set(key, {
             date: override.date,
@@ -153,16 +164,32 @@ export function computeDailyAverageMinutes(rows: DailySummaryRow[]): number {
 }
 
 export function computeSecondsToday(task: Task, todayKey: string, now: Date): number {
-  if (task.overrides) {
-    const override = task.overrides.find((o) => o.date === todayKey)
-    if (override !== undefined) {
-      return override.minutesOverride * 60
-    }
-  }
-  let totalSeconds = 0
   const [y, m, d] = todayKey.split('-').map(Number)
   const startOfDay = new Date(y, m - 1, d, 0, 0, 0, 0)
   const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999)
+
+  const override = task.overrides?.find((o) => o.date === todayKey)
+  if (override !== undefined) {
+    // Mirror buildDailySummary: count only post-override intervals.
+    // Legacy override (no setAt): only the running interval contributes.
+    // Modern override (with setAt): all intervals starting after setAt contribute.
+    let postSeconds = 0
+    for (const interval of task.intervals) {
+      if (!override.setAt && interval.end !== null) continue // legacy: running only
+      if (override.setAt && interval.start <= override.setAt) continue // pre-override
+      const startMs = new Date(interval.start).getTime()
+      const endMs = interval.end ? new Date(interval.end).getTime() : now.getTime()
+      if (endMs <= startMs) continue
+      const segStart = Math.max(startMs, startOfDay.getTime())
+      const segEnd = Math.min(endMs, endOfDay.getTime())
+      if (segEnd > segStart) {
+        postSeconds += Math.round((segEnd - segStart) / 1000)
+      }
+    }
+    return override.minutesOverride * 60 + postSeconds
+  }
+
+  let totalSeconds = 0
   for (const interval of task.intervals) {
     const startMs = new Date(interval.start).getTime()
     const endMs = interval.end ? new Date(interval.end).getTime() : now.getTime()

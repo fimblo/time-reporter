@@ -96,10 +96,11 @@ export function TrackingView(props: TrackingViewProps) {
     if (!editingTask) return
     const overrides = [...(editingTask.overrides ?? [])]
     const idx = overrides.findIndex((o) => o.date === date)
+    const setAt = new Date().toISOString()
     if (idx >= 0) {
-      overrides[idx] = { ...overrides[idx], minutesOverride: minutes }
+      overrides[idx] = { ...overrides[idx], minutesOverride: minutes, setAt }
     } else {
-      overrides.push({ date, minutesOverride: minutes })
+      overrides.push({ date, minutesOverride: minutes, setAt })
     }
     setEditingTask({ ...editingTask, overrides })
   }
