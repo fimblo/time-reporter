@@ -76,6 +76,12 @@ function App() {
 
   const totalMinutes = computeTotalMinutes(summaryRows)
 
+  const maxBarMinutes = Math.max(thisWeek.total, lastWeek.total, avgWeek?.total ?? 0)
+  const barMax = maxBarMinutes === 0 ? 1 : maxBarMinutes * 1.1
+  const lastWeekBarPct = (lastWeek.total / barMax) * 100
+  const thisWeekBarPct = (thisWeek.total / barMax) * 100
+  const avgWeekBarPct = avgWeek ? (avgWeek.total / barMax) * 100 : null
+
   function exportCsv() {
     if (summaryRows.length === 0) return
     const csv = buildCsvFromDailySummary(summaryRows)
@@ -145,40 +151,38 @@ function App() {
         <div className="sidebar-footer">
           <div className="sidebar-stat-group">
             <div className="sidebar-stat-group-title">Today</div>
-            <div className="stat"><span className="stat-label">Total</span><span className="stat-value">{formatMinutesAsHoursMinutes(todayMinutes)}</span></div>
+            <div className="stat-value-only">{formatMinutesAsHoursMinutes(todayMinutes)}</div>
           </div>
           <hr className="sidebar-divider" />
           <div className="sidebar-stat-group">
-            <div className="sidebar-stat-group-title">This week</div>
-            <div className="stat"><span className="stat-label">Total</span><span className="stat-value">{formatMinutesAsHoursMinutes(thisWeek.total)}</span></div>
-            <div className="stat"><span className="stat-label">Days</span><span className="stat-value">{thisWeek.days}</span></div>
-            <div className="stat"><span className="stat-label">Avg/day</span><span className="stat-value">{formatMinutesAsHoursMinutes(thisWeek.avg)}</span></div>
-            <div className="stat"><span className="stat-label">Std dev</span><span className="stat-value">{formatMinutesAsHoursMinutes(thisWeek.stddev)}</span></div>
-          </div>
-          <hr className="sidebar-divider" />
-          <div className="sidebar-stat-group">
-            <div className="sidebar-stat-group-title">Last week</div>
-            <div className="stat"><span className="stat-label">Total</span><span className="stat-value">{formatMinutesAsHoursMinutes(lastWeek.total)}</span></div>
-            <div className="stat"><span className="stat-label">Days</span><span className="stat-value">{lastWeek.days}</span></div>
-            <div className="stat"><span className="stat-label">Avg/day</span><span className="stat-value">{formatMinutesAsHoursMinutes(lastWeek.avg)}</span></div>
-            <div className="stat"><span className="stat-label">Std dev</span><span className="stat-value">{formatMinutesAsHoursMinutes(lastWeek.stddev)}</span></div>
-          </div>
-          <hr className="sidebar-divider" />
-          {avgWeek !== null && (
-            <>
-              <div className="sidebar-stat-group">
-                <div className="sidebar-stat-group-title">Avg week <span className="sidebar-stat-group-note">({numWeeks}w)</span></div>
-                <div className="stat"><span className="stat-label">Total</span><span className="stat-value">{formatMinutesAsHoursMinutes(avgWeek.total)}</span></div>
-                <div className="stat"><span className="stat-label">Days</span><span className="stat-value">{String(avgWeek.days)}</span></div>
-                <div className="stat"><span className="stat-label">Avg/day</span><span className="stat-value">{formatMinutesAsHoursMinutes(avgWeek.avg)}</span></div>
-                <div className="stat"><span className="stat-label">Std dev</span><span className="stat-value">{formatMinutesAsHoursMinutes(avgWeek.stddev)}</span></div>
+            <div className="sidebar-stat-group-title">Weekly</div>
+            {maxBarMinutes > 0 && (
+              <div className="week-bar-chart">
+                <div className="week-bar-label-col">
+                  <div className="week-bar-row-label">This</div>
+                  <div className="week-bar-row-label">Last</div>
+                </div>
+                <div className="week-bar-tracks">
+                  <div className="week-bar week-bar--this-week" style={{ width: `${thisWeekBarPct}%` }} />
+                  <div className="week-bar week-bar--last-week" style={{ width: `${lastWeekBarPct}%` }} />
+                  {avgWeekBarPct !== null && (
+                    <div className="week-bar-avg-line" style={{ left: `${avgWeekBarPct}%` }} />
+                  )}
+                </div>
+                <div className="week-bar-value-col">
+                  <div className="week-bar-row-value">{formatMinutesAsHoursMinutes(thisWeek.total)}</div>
+                  <div className="week-bar-row-value">{formatMinutesAsHoursMinutes(lastWeek.total)}</div>
+                </div>
               </div>
-              <hr className="sidebar-divider" />
-            </>
-          )}
+            )}
+            {avgWeek !== null && (
+              <div className="week-bar-avg-note">avg {formatMinutesAsHoursMinutes(avgWeek.total)}/wk ({numWeeks}w)</div>
+            )}
+          </div>
+          <hr className="sidebar-divider" />
           <div className="sidebar-stat-group">
             <div className="sidebar-stat-group-title">All time</div>
-            <div className="stat"><span className="stat-label">Total</span><span className="stat-value">{formatMinutesAsHoursMinutes(totalMinutes)}</span></div>
+            <div className="stat-value-only">{formatMinutesAsHoursMinutes(totalMinutes)}</div>
           </div>
         </div>
       </aside>

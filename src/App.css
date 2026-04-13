@@ -44,12 +44,6 @@
   gap: 0.5rem;
 }
 
-.stat {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.82rem;
-}
-
 .stat-label {
   color: #555;
 }
@@ -73,16 +67,90 @@
   margin-bottom: 0.1rem;
 }
 
-.sidebar-stat-group-note {
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0;
-}
 
 .sidebar-divider {
   border: none;
   border-top: 1px solid #ddd;
   margin: 0.35rem 0;
+}
+
+.stat-value-only {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.week-bar-chart {
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.week-bar-label-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.week-bar-row-label {
+  font-size: 0.7rem;
+  color: #888;
+  line-height: 14px;
+}
+
+.week-bar-tracks {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+}
+
+.week-bar {
+  height: 14px;
+  border-radius: 3px;
+  min-width: 3px;
+}
+
+.week-bar--last-week {
+  background: #166534;
+}
+
+.week-bar--this-week {
+  background: #646cff;
+}
+
+.week-bar-avg-line {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: #e85d04;
+  border-radius: 1px;
+}
+
+.week-bar-value-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.week-bar-row-value {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 14px;
+}
+
+.week-bar-avg-note {
+  font-size: 0.68rem;
+  color: #e85d04;
+  margin-top: 4px;
 }
 
 .main {
