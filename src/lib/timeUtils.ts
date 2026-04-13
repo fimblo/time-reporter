@@ -190,3 +190,40 @@ export function cloneAppState(state: AppState): AppState {
   return JSON.parse(JSON.stringify(state)) as AppState
 }
 
+export function dateKeyFromDate(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+export function getMondayOfWeek(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  const day = date.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  const monday = new Date(date)
+  monday.setDate(date.getDate() + diff)
+  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
+}
+
+export function addDays(dateStr: string, n: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  date.setDate(date.getDate() + n)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+/** Std dev of daily totals across active (non-zero) days only. */
+export function computeStdDevMinutes(rows: DailySummaryRow[]): number {
+  const byDate = new Map<string, number>()
+  for (const row of rows) {
+    byDate.set(row.date, (byDate.get(row.date) ?? 0) + row.minutes)
+  }
+  const values = Array.from(byDate.values())
+  if (values.length <= 1) return 0
+  const avg = values.reduce((s, v) => s + v, 0) / values.length
+  const variance = values.reduce((s, v) => s + (v - avg) ** 2, 0) / values.length
+  return Math.round(Math.sqrt(variance))
+}
+

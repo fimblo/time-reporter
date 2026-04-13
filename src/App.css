@@ -11,6 +11,7 @@
   border-right: 1px solid #ddd;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .app-title {
@@ -46,7 +47,7 @@
 .stat {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
 }
 
 .stat-label {
@@ -55,6 +56,33 @@
 
 .stat-value {
   font-weight: 600;
+}
+
+.sidebar-stat-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sidebar-stat-group-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+  margin-bottom: 0.1rem;
+}
+
+.sidebar-stat-group-note {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 0.35rem 0;
 }
 
 .main {
