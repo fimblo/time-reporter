@@ -51,5 +51,6 @@ This is a React + TypeScript SPA built with Vite. All state is persisted to `loc
 ## Commit style
 
 Conventional Commits: `type: short description` — lowercase, no trailing period.
-
 Common types: `feat`, `fix`, `chore`, `refactor`, `test`, `docs`.
+Commit subject length: no more than 60 characters.
+
