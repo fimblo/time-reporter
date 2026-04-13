@@ -120,7 +120,7 @@ function App() {
               onDeleteTask={handleDeleteTask}
             />
           ) : (
-            <OverviewView rows={summaryRows} />
+            <OverviewView rows={summaryRows} now={now} />
           )}
         </section>
       </main>

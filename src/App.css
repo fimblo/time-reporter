@@ -235,9 +235,7 @@ input {
 
 .bar-chart {
   display: flex;
-  align-items: flex-end;
-  gap: 0.75rem;
-  height: 200px;
+  gap: 0.5rem;
 }
 
 .bar-column {
@@ -245,26 +243,70 @@ input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+}
+
+.bar-track {
+  position: relative;
+  width: 100%;
+  height: 160px;
 }
 
 .bar {
-  width: 100%;
-  background: #646cff;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   border-radius: 4px 4px 0 0;
-  position: relative;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: center;
+  min-height: 2px;
 }
 
 .bar-label {
   font-size: 0.7rem;
   color: #fff;
   padding: 0.15rem 0.2rem;
+  white-space: nowrap;
 }
 
 .bar-day {
   margin-top: 0.25rem;
   font-size: 0.7rem;
+}
+
+.two-week-chart {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.week-chart-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.week-chart-label {
+  font-size: 0.72rem;
+  color: #888;
+  text-align: center;
+  margin-bottom: 0.3rem;
+}
+
+.bar--last-week {
+  background: #166534;
+}
+
+.bar--this-week {
+  background: #646cff;
+}
+
+.week-header-row td {
+  background-color: #f0f0f5;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #444;
+  padding-top: 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #d0d0e0;
 }
