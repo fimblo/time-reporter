@@ -52,7 +52,10 @@ function todayKey(now: Date): string {
 export function TrackingView(props: TrackingViewProps) {
   const { tasks, now, activeTaskId, onCreateTask, onStartTimer, onPauseTimer, onUpdateTask, onDeleteTask } =
     props
-  const [client, setClient] = useState('')
+  const [client, setClient] = useState(() => {
+    if (tasks.length === 0) return ''
+    return [...tasks].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0].client
+  })
   const [topic, setTopic] = useState('')
   const [startRunning, setStartRunning] = useState(true)
   const [editingTask, setEditingTask] = useState<EditableTask | null>(null)
@@ -78,7 +81,6 @@ export function TrackingView(props: TrackingViewProps) {
     e.preventDefault()
     if (!client.trim() && !topic.trim()) return
     onCreateTask(client.trim(), topic.trim(), startRunning)
-    setClient('')
     setTopic('')
   }
 
