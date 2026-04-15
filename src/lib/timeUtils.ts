@@ -110,6 +110,7 @@ export function buildDailySummary(tasks: Task[], now: Date = new Date()): DailyS
         const existing = byKey.get(key)
         if (existing) {
           existing.minutes += chunk.minutes
+          if (interval.start > existing.lastStart) existing.lastStart = interval.start
         } else {
           byKey.set(key, {
             date: chunk.date,
@@ -117,6 +118,7 @@ export function buildDailySummary(tasks: Task[], now: Date = new Date()): DailyS
             client: task.client,
             topic: task.topic,
             minutes: chunk.minutes,
+            lastStart: interval.start,
           })
         }
       }
@@ -138,6 +140,7 @@ export function buildDailySummary(tasks: Task[], now: Date = new Date()): DailyS
             client: task.client,
             topic: task.topic,
             minutes: override.minutesOverride,
+            lastStart: override.setAt ?? override.date,
           })
         }
       }

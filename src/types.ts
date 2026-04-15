@@ -30,6 +30,7 @@ export interface DailySummaryRow {
   client: string
   topic: string
   minutes: number
+  lastStart: string // ISO timestamp of the latest interval start on this day
 }
 
 export interface AppState {

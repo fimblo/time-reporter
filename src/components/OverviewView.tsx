@@ -74,7 +74,11 @@ export function OverviewView({ rows, now }: OverviewViewProps) {
   const hasLastWeekData = lastWeekDays.some((d) => minutesForDay(d) > 0)
 
   // Details grouped by week, newest week first
-  const rowsDesc = [...rows].sort((a, b) => b.date.localeCompare(a.date))
+  const rowsDesc = [...rows].sort((a, b) => {
+    const dateCmp = b.date.localeCompare(a.date)
+    if (dateCmp !== 0) return dateCmp
+    return b.lastStart.localeCompare(a.lastStart)
+  })
   const weekMap = new Map<string, DailySummaryRow[]>()
   for (const row of rowsDesc) {
     const monday = getMondayOfWeek(row.date)
