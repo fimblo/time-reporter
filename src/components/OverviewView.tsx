@@ -159,12 +159,16 @@ export function OverviewView({ rows, now }: OverviewViewProps) {
               </tr>
             </thead>
             <tbody>
-              {weekKeys.map((monday) => (
+              {weekKeys.map((monday) => {
+                const weekRows = weekMap.get(monday)!
+                const weekTotal = weekRows.reduce((s, r) => s + r.minutes, 0)
+                return (
                 <Fragment key={monday}>
                   <tr className="week-header-row">
-                    <td colSpan={4}>{formatWeekLabel(monday)}</td>
+                    <td colSpan={3}>{formatWeekLabel(monday)}</td>
+                    <td>{weekTotal} min ({formatMinutesAsHoursMinutes(weekTotal)})</td>
                   </tr>
-                  {weekMap.get(monday)!.map((row) => (
+                  {weekRows.map((row) => (
                     <tr key={`${row.date}-${row.taskId}`}>
                       <td>{row.date}</td>
                       <td>{row.client || 'No client'}</td>
@@ -173,7 +177,8 @@ export function OverviewView({ rows, now }: OverviewViewProps) {
                     </tr>
                   ))}
                 </Fragment>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         )}
