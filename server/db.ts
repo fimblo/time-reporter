@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import fs from 'node:fs'
 import path from 'node:path'
-import type { AppState, DailyOverride, Interval, Task } from '../src/types.ts'
+import type { AppState, Client, DailyOverride, Interval, Task } from '../src/types.ts'
 
 const DEFAULT_RELATIVE_DB = path.join('data', 'time-reporter.sqlite')
 
@@ -27,13 +27,20 @@ export function getDb(): Database.Database {
 }
 
 function migrate(db: Database.Database): void {
-  // Add set_at to existing databases that predate this column
+  // Legacy: add set_at to older databases that predate this column
   try { db.exec('ALTER TABLE daily_overrides ADD COLUMN set_at TEXT') } catch { /* already exists */ }
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS clients (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL UNIQUE,
+      color TEXT NOT NULL DEFAULT '#6366f1',
+      visible_in_tabs INTEGER NOT NULL DEFAULT 1
+    );
+
     CREATE TABLE IF NOT EXISTS tasks (
       id TEXT PRIMARY KEY NOT NULL,
-      client TEXT NOT NULL,
+      client_id TEXT NOT NULL REFERENCES clients(id),
       topic TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
@@ -64,9 +71,65 @@ function migrate(db: Database.Database): void {
   `)
 }
 
+// ── Client rows ─────────────────────────────────────────────────────────────
+
+interface ClientRow {
+  id: string
+  name: string
+  color: string
+  visible_in_tabs: number
+}
+
+function rowToClient(row: ClientRow): Client {
+  return {
+    id: row.id,
+    name: row.name,
+    color: row.color,
+    visibleInTabs: row.visible_in_tabs === 1,
+  }
+}
+
+export function loadClients(): Client[] {
+  const db = getDb()
+  const rows = db.prepare('SELECT * FROM clients ORDER BY name').all() as ClientRow[]
+  return rows.map(rowToClient)
+}
+
+export function createClient(body: unknown): Client {
+  if (body === null || typeof body !== 'object') throw new Error('Invalid body')
+  const o = body as Record<string, unknown>
+  if (typeof o.name !== 'string' || !o.name.trim()) throw new Error('name required')
+  if (typeof o.color !== 'string') throw new Error('color required')
+  const id = crypto.randomUUID()
+  const visibleInTabs = o.visibleInTabs !== false ? 1 : 0
+  const db = getDb()
+  db.prepare(
+    'INSERT INTO clients (id, name, color, visible_in_tabs) VALUES (?, ?, ?, ?)',
+  ).run(id, o.name.trim(), o.color, visibleInTabs)
+  return rowToClient(
+    db.prepare('SELECT * FROM clients WHERE id = ?').get(id) as ClientRow,
+  )
+}
+
+export function updateClient(id: string, body: unknown): void {
+  if (body === null || typeof body !== 'object') throw new Error('Invalid body')
+  const o = body as Record<string, unknown>
+  const db = getDb()
+  const existing = db.prepare('SELECT * FROM clients WHERE id = ?').get(id) as ClientRow | undefined
+  if (!existing) throw new Error('Client not found')
+  const name = typeof o.name === 'string' ? o.name.trim() : existing.name
+  const color = typeof o.color === 'string' ? o.color : existing.color
+  const visibleInTabs = o.visibleInTabs === undefined ? existing.visible_in_tabs : (o.visibleInTabs ? 1 : 0)
+  db.prepare(
+    'UPDATE clients SET name = ?, color = ?, visible_in_tabs = ? WHERE id = ?',
+  ).run(name, color, visibleInTabs, id)
+}
+
+// ── App state ────────────────────────────────────────────────────────────────
+
 interface TaskRow {
   id: string
-  client: string
+  client_name: string
   topic: string
   created_at: string
   updated_at: string
@@ -89,7 +152,13 @@ interface OverrideRow {
 
 export function loadAppState(): AppState {
   const db = getDb()
-  const taskRows = db.prepare('SELECT * FROM tasks ORDER BY created_at').all() as TaskRow[]
+  const taskRows = db.prepare(`
+    SELECT t.id, t.topic, t.created_at, t.updated_at, t.notes, c.name AS client_name
+    FROM tasks t
+    JOIN clients c ON t.client_id = c.id
+    ORDER BY t.created_at
+  `).all() as TaskRow[]
+
   const tasks: Task[] = taskRows.map((row) => {
     const intervalRows = db
       .prepare('SELECT * FROM intervals WHERE task_id = ? ORDER BY start')
@@ -113,7 +182,7 @@ export function loadAppState(): AppState {
         : undefined
     const task: Task = {
       id: row.id,
-      client: row.client,
+      client: row.client_name,
       topic: row.topic,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -128,10 +197,7 @@ export function loadAppState(): AppState {
     | { value: string }
     | undefined
 
-  return {
-    tasks,
-    lastActiveTaskId: lastRow?.value,
-  }
+  return { tasks, lastActiveTaskId: lastRow?.value }
 }
 
 function assertAppState(body: unknown): asserts body is AppState {
@@ -153,9 +219,11 @@ function assertAppState(body: unknown): asserts body is AppState {
 export function saveAppState(state: unknown): void {
   assertAppState(state)
   const db = getDb()
+
+  const getClientId = db.prepare('SELECT id FROM clients WHERE name = ?')
   const insertTask = db.prepare(`
-    INSERT INTO tasks (id, client, topic, created_at, updated_at, notes)
-    VALUES (@id, @client, @topic, @created_at, @updated_at, @notes)
+    INSERT INTO tasks (id, client_id, topic, created_at, updated_at, notes)
+    VALUES (@id, @client_id, @topic, @created_at, @updated_at, @notes)
   `)
   const insertInterval = db.prepare(`
     INSERT INTO intervals (id, task_id, start, end)
@@ -174,9 +242,12 @@ export function saveAppState(state: unknown): void {
     db.prepare("DELETE FROM meta WHERE key = 'last_active_task_id'").run()
 
     for (const task of state.tasks) {
+      const clientRow = getClientId.get(task.client) as { id: string } | undefined
+      if (!clientRow) throw new Error(`Unknown client: "${task.client}". Create it via POST /api/clients first.`)
+
       insertTask.run({
         id: task.id,
-        client: task.client,
+        client_id: clientRow.id,
         topic: task.topic,
         created_at: task.createdAt,
         updated_at: task.updatedAt,

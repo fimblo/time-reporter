@@ -1,35 +1,41 @@
 import type { AppState } from '../types'
 
 const STORAGE_KEY = 'time-reporter-state-v1'
+const defaultState: AppState = { tasks: [] }
 
-const defaultState: AppState = {
-  tasks: [],
-}
-
-export function loadState(): AppState {
-  if (typeof window === 'undefined') {
-    return defaultState
+export async function loadState(): Promise<AppState> {
+  const API_URL = import.meta.env.VITE_API_URL as string | undefined
+  if (API_URL) {
+    const res = await fetch(`${API_URL}/api/state`)
+    if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`)
+    return res.json() as Promise<AppState>
   }
+  if (typeof window === 'undefined') return defaultState
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultState
     const parsed = JSON.parse(raw) as AppState
-    if (!parsed.tasks) {
-      return defaultState
-    }
-    return parsed
+    return parsed.tasks ? parsed : defaultState
   } catch {
     return defaultState
   }
 }
 
-export function saveState(state: AppState): void {
+export async function saveState(state: AppState): Promise<void> {
+  const API_URL = import.meta.env.VITE_API_URL as string | undefined
+  if (API_URL) {
+    const res = await fetch(`${API_URL}/api/state`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state),
+    })
+    if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`)
+    return
+  }
   if (typeof window === 'undefined') return
   try {
-    const serialized = JSON.stringify(state)
-    window.localStorage.setItem(STORAGE_KEY, serialized)
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {
-    // ignore persistence errors in v1
+    // ignore persistence errors
   }
 }
-

@@ -35,12 +35,12 @@ describe('storage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('loadState returns default when empty', () => {
-    const state = loadState()
+  it('loadState returns default when empty', async () => {
+    const state = await loadState()
     expect(state.tasks).toEqual([])
   })
 
-  it('saveState and loadState round-trip', () => {
+  it('saveState and loadState round-trip', async () => {
     const task: Task = {
       id: 't1',
       client: 'Acme',
@@ -50,16 +50,16 @@ describe('storage', () => {
       intervals: [],
     }
     const state: AppState = { tasks: [task] }
-    saveState(state)
-    const loaded = loadState()
+    await saveState(state)
+    const loaded = await loadState()
     expect(loaded.tasks.length).toBe(1)
     expect(loaded.tasks[0].client).toBe('Acme')
     expect(store[STORAGE_KEY]).toBeDefined()
   })
 
-  it('loadState returns default on invalid JSON', () => {
+  it('loadState returns default on invalid JSON', async () => {
     store[STORAGE_KEY] = 'not json'
-    const state = loadState()
+    const state = await loadState()
     expect(state.tasks).toEqual([])
   })
 })

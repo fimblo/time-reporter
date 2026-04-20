@@ -23,6 +23,16 @@ interface EditableTask extends Task {
   localTopic: string
 }
 
+function dateKeyFromDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function yesterdayKey(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return dateKeyFromDate(d)
+}
+
 function computeMinutesToday(task: Task, todayKey: string, now: Date): number {
   return Math.floor(computeSecondsToday(task, todayKey, now) / 60)
 }
@@ -44,6 +54,7 @@ export function TrackingView(props: TrackingViewProps) {
   const [topic, setTopic] = useState('')
   const [startRunning, setStartRunning] = useState(true)
   const [editingTask, setEditingTask] = useState<EditableTask | null>(null)
+  const [newDateInput, setNewDateInput] = useState(yesterdayKey)
 
   const today = todayKey(now)
 
@@ -104,11 +115,9 @@ export function TrackingView(props: TrackingViewProps) {
   const editableDates = useMemo(() => {
     if (!editingTask) return []
     const dates = new Set<string>()
+    dates.add(today) // always include today (modal only opens from today's task list)
     for (const interval of editingTask.intervals) {
-      const chunks = splitIntervalByDay(interval, now)
-      for (const chunk of chunks) {
-        dates.add(chunk.date)
-      }
+      dates.add(dateKeyFromDate(new Date(interval.start)))
     }
     if (editingTask.overrides) {
       for (const override of editingTask.overrides) {
@@ -116,7 +125,7 @@ export function TrackingView(props: TrackingViewProps) {
       }
     }
     return Array.from(dates).sort()
-  }, [editingTask, now])
+  }, [editingTask, today])
 
   return (
     <div className="tracking-view">
@@ -218,9 +227,8 @@ export function TrackingView(props: TrackingViewProps) {
                 />
               </label>
 
-              {editableDates.length > 0 && (
-                <div className="daily-table">
-                  <h4>Daily time overrides</h4>
+              <div className="daily-table">
+                  <h4>Daily time</h4>
                   <table>
                     <thead>
                       <tr>
@@ -267,8 +275,26 @@ export function TrackingView(props: TrackingViewProps) {
                       })}
                     </tbody>
                   </table>
+                  <div className="add-date-row">
+                    <input
+                      type="date"
+                      value={newDateInput}
+                      max={today}
+                      onChange={(e) => setNewDateInput(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newDateInput && !editableDates.includes(newDateInput)) {
+                          updateOverrideMinutes(newDateInput, 0)
+                        }
+                      }}
+                      disabled={!newDateInput || editableDates.includes(newDateInput)}
+                    >
+                      Add date
+                    </button>
+                  </div>
                 </div>
-              )}
             </div>
             <div className="modal-footer">
               <button onClick={() => setEditingTask(null)}>Cancel</button>

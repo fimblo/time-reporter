@@ -1,6 +1,7 @@
 import './App.css'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TrackingView } from './components/TrackingView'
+import { MigrationCheck } from './components/MigrationCheck'
 import type { AppState, Task } from './types'
 import { loadState, saveState } from './lib/storage'
 import { useTimerEngine } from './hooks/useTimerEngine'
@@ -20,11 +21,45 @@ import { buildCsvFromDailySummary } from './lib/csv'
 
 type View = 'tracking' | 'overview'
 
-const initialState: AppState = loadState()
-
+// Outer shell: handles async initial load
 function App() {
+  const [initialState, setInitialState] = useState<AppState | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadState()
+      .then(setInitialState)
+      .catch((e: unknown) => setLoadError(e instanceof Error ? e.message : String(e)))
+  }, [])
+
+  if (loadError) {
+    return (
+      <div className="app-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: 'var(--color-danger, red)' }}>Failed to load: {loadError}</p>
+      </div>
+    )
+  }
+  if (!initialState) {
+    return (
+      <div className="app-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p>Loading…</p>
+      </div>
+    )
+  }
+
+  return <AppLoaded initialState={initialState} />
+}
+
+// Inner shell: owns all app logic once data is loaded
+function AppLoaded({ initialState }: { initialState: AppState }) {
   const [view, setView] = useState<View>('tracking')
-  const engine = useTimerEngine(initialState, saveState)
+  const [showMigrationCheck, setShowMigrationCheck] = useState(false)
+
+  const handleSave = useCallback((state: AppState) => {
+    saveState(state).catch(console.error)
+  }, [])
+
+  const engine = useTimerEngine(initialState, handleSave)
   const { state, now } = engine
 
   const summaryRows = useMemo(() => buildDailySummary(state.tasks, now), [state.tasks, now])
@@ -51,7 +86,6 @@ function App() {
   }
   const todayMinutes = computeTotalMinutes(summaryRows.filter((r) => r.date === todayKey))
 
-  // Per-week stats across all completed weeks (current week excluded)
   const completedWeekMap = new Map<string, typeof summaryRows>()
   for (const row of summaryRows) {
     const monday = getMondayOfWeek(row.date)
@@ -106,13 +140,8 @@ function App() {
       updatedAt: createdAt,
       intervals: [],
     }
-    engine.updateState((prev) => ({
-      ...prev,
-      tasks: [...prev.tasks, newTask],
-    }))
-    if (startRunning) {
-      engine.startTimer(newTask.id)
-    }
+    engine.updateState((prev) => ({ ...prev, tasks: [...prev.tasks, newTask] }))
+    if (startRunning) engine.startTimer(newTask.id)
   }
 
   function handleUpdateTask(updated: Task) {
@@ -189,10 +218,18 @@ function App() {
       <main className="main">
         <header className="main-header">
           <h2>{view === 'tracking' ? 'Tracking' : 'Overview'}</h2>
-          <button onClick={exportCsv} disabled={summaryRows.length === 0}>
-            Export CSV
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {/* TEMPORARY — remove after migration verified */}
+            <button onClick={() => setShowMigrationCheck((v) => !v)}>
+              {showMigrationCheck ? 'Hide verify' : 'Verify migration'}
+            </button>
+            <button onClick={exportCsv} disabled={summaryRows.length === 0}>
+              Export CSV
+            </button>
+          </div>
         </header>
+        {/* TEMPORARY — remove after migration verified */}
+        {showMigrationCheck && <MigrationCheck />}
         <section className="main-content">
           {view === 'tracking' ? (
             <TrackingView

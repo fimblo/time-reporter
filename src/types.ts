@@ -1,5 +1,12 @@
 export type UUID = string
 
+export interface Client {
+  id: UUID
+  name: string
+  color: string
+  visibleInTabs: boolean
+}
+
 export interface Interval {
   id: UUID
   taskId: UUID

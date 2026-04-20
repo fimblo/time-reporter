@@ -15,6 +15,9 @@ dist-ssr
 # Claude Code workspace
 .claude/
 
+# Migration artefacts
+localstorage.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
