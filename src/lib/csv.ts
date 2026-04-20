@@ -16,7 +16,7 @@ export function buildCsvFromDailySummary(rows: DailySummaryRow[]): string {
     lines.push(values.join(','))
   }
 
-  return lines.join('\n')
+  return '\uFEFF' + lines.join('\n')
 }
 
 function escapeCsv(value: string): string {

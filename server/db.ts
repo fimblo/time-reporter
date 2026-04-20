@@ -14,6 +14,13 @@ function getDbPath(): string {
 
 let dbInstance: Database.Database | null = null
 
+export function closeDb(): void {
+  if (dbInstance) {
+    dbInstance.close()
+    dbInstance = null
+  }
+}
+
 export function getDb(): Database.Database {
   if (dbInstance) return dbInstance
   const dbPath = getDbPath()

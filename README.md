@@ -28,8 +28,22 @@ Then set `VITE_API_URL=http://localhost:3001` in `.env.local` to point the front
 
 ## Tests
 
+Frontend (Vitest, jsdom):
+
 ```bash
 npm run test
+```
+
+Backend / database layer (Vitest, Node environment):
+
+```bash
+npx vitest run server/db.test.ts
+```
+
+Or run everything at once:
+
+```bash
+npx vitest run
 ```
 
 ---
