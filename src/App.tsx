@@ -157,7 +157,8 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `time-report-${selectedClient?.name ?? 'export'}.csv`
+    const ts = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    link.download = `time-report-${selectedClient?.name ?? 'export'}-${ts}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -205,12 +206,68 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     ? selectedClient?.name ?? 'Tracking'
     : selectedClient?.name ?? 'Overview'
 
+  const accentColor = selectedClient?.color ?? '#6366f1'
+
   return (
-    <div className="app-root">
+    <div className="app-root" style={{ '--accent': accentColor } as React.CSSProperties}>
+      {/* Full-width top bar — sits above sidebar + main */}
+      <div className="view-tabs">
+        <span className="app-title">Time Reporter</span>
+        {showClients ? (
+          <span className="view-tabs-title">Manage clients</span>
+        ) : selectedClient ? (
+          <>
+            <span className="view-tabs-title" style={{ color: accentColor }}>{selectedClient.name}</span>
+            <div className="view-tabs-tab-group">
+              <button
+                className={`view-tab${view === 'tracking' ? ' active' : ''}`}
+                onClick={() => setView('tracking')}
+              >
+                Tracking
+              </button>
+              <button
+                className={`view-tab${view === 'overview' ? ' active' : ''}`}
+                onClick={() => setView('overview')}
+              >
+                Overview
+              </button>
+            </div>
+            <div className="view-tabs-spacer" />
+            <button className="btn-export" onClick={exportCsv} disabled={summaryRows.length === 0}>
+              Export CSV
+            </button>
+          </>
+        ) : (
+          <span className="view-tabs-title">No client selected</span>
+        )}
+      </div>
+
+      <div className="app-body">
       <aside className="sidebar">
-        <h1 className="app-title">Time Reporter</h1>
+
+        <nav className="client-nav">
+          {visibleClients.map((c) => (
+            <button
+              key={c.id}
+              className={`client-nav-item${!showClients && selectedClientId === c.id ? ' active' : ''}`}
+              onClick={() => selectClient(c.id)}
+            >
+              <span className="client-dot" style={{ background: c.color }} />
+              <span>{c.name}</span>
+            </button>
+          ))}
+          <hr className="client-nav-divider" />
+          <button
+            className={`client-nav-item client-nav-manage${showClients ? ' active' : ''}`}
+            onClick={() => setShowClients(true)}
+          >
+            <span className="client-dot client-dot--manage" />
+            <span>Manage clients</span>
+          </button>
+        </nav>
+
         <div className="sidebar-footer">
-          {selectedClient && (
+          {selectedClient && !showClients && (
             <>
               <div className="sidebar-stat-group">
                 <div className="sidebar-stat-group-title">Today</div>
@@ -226,7 +283,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
                       <div className="week-bar-row-label">Last</div>
                     </div>
                     <div className="week-bar-tracks">
-                      <div className="week-bar week-bar--this-week" style={{ width: `${thisWeekBarPct}%` }} />
+                      <div className="week-bar week-bar--this-week" style={{ width: `${thisWeekBarPct}%`, background: accentColor }} />
                       <div className="week-bar week-bar--last-week" style={{ width: `${lastWeekBarPct}%` }} />
                       {avgWeekBarPct !== null && (
                         <div className="week-bar-avg-line" style={{ left: `${avgWeekBarPct}%` }} />
@@ -253,48 +310,6 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
       </aside>
 
       <main className="main">
-        {/* Client tab bar */}
-        <div className="client-tabs">
-          {visibleClients.map((c) => (
-            <button
-              key={c.id}
-              className={`client-tab${!showClients && selectedClientId === c.id ? ' active' : ''}`}
-              onClick={() => selectClient(c.id)}
-            >
-              <span className="client-tab-dot" style={{ background: c.color }} />
-              {c.name}
-            </button>
-          ))}
-          <button
-            className={`client-tab client-tab-manage${showClients ? ' active' : ''}`}
-            onClick={() => setShowClients(true)}
-          >
-            Manage
-          </button>
-        </div>
-
-        {/* View sub-tabs (only when a client is selected) */}
-        {!showClients && selectedClient && (
-          <div className="view-tabs">
-            <button
-              className={`view-tab${view === 'tracking' ? ' active' : ''}`}
-              onClick={() => setView('tracking')}
-            >
-              Tracking
-            </button>
-            <button
-              className={`view-tab${view === 'overview' ? ' active' : ''}`}
-              onClick={() => setView('overview')}
-            >
-              Overview
-            </button>
-            <div className="view-tabs-spacer" />
-            <button onClick={exportCsv} disabled={summaryRows.length === 0}>
-              Export CSV
-            </button>
-          </div>
-        )}
-
         <section className="main-content">
           {showClients ? (
             <ClientsView
@@ -327,6 +342,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
           )}
         </section>
       </main>
+      </div>{/* app-body */}
     </div>
   )
 }

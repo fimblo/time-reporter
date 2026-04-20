@@ -2,11 +2,20 @@ import { useState } from 'react'
 import type { Client } from '../types'
 import { createClientApi, updateClientApi } from '../lib/storage'
 
+// Gruvbox-inspired palette: dark → normal → bright, 3 rows × 9
 export const COLOR_PALETTE = [
-  '#6366f1', '#8b5cf6', '#a855f7', '#ec4899', '#f43f5e',
-  '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
-  '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
-  '#64748b', '#78716c', '#d946ef', '#2dd4bf', '#fb923c',
+  // row 1 — reds, oranges, yellows
+  '#9d0006', '#cc241d', '#fb4934',
+  '#af3a03', '#d65d0e', '#fe8019',
+  '#b57614', '#d79921', '#fabd2f',
+  // row 2 — greens, aquas, blues
+  '#79740e', '#98971a', '#b8bb26',
+  '#427b58', '#689d6a', '#8ec07c',
+  '#076678', '#458588', '#83a598',
+  // row 3 — purples/pinks, grays
+  '#8f3f71', '#b16286', '#d3869b',
+  '#504945', '#7c6f64', '#928374',
+  '#a89984', '#bdae93', '#d5c4a1',
 ]
 
 function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
