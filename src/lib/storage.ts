@@ -1,4 +1,4 @@
-import type { AppState } from '../types'
+import type { AppState, Client } from '../types'
 
 const STORAGE_KEY = 'time-reporter-state-v1'
 const defaultState: AppState = { tasks: [] }
@@ -19,6 +19,38 @@ export async function loadState(): Promise<AppState> {
   } catch {
     return defaultState
   }
+}
+
+export async function loadClients(): Promise<Client[]> {
+  const API_URL = import.meta.env.VITE_API_URL as string | undefined
+  if (!API_URL) return []
+  const res = await fetch(`${API_URL}/api/clients`)
+  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`)
+  return res.json() as Promise<Client[]>
+}
+
+export async function createClientApi(data: { name: string; color: string }): Promise<Client> {
+  const API_URL = import.meta.env.VITE_API_URL as string
+  const res = await fetch(`${API_URL}/api/clients`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json() as Promise<Client>
+}
+
+export async function updateClientApi(
+  id: string,
+  data: Partial<{ name: string; color: string; visibleInTabs: boolean }>,
+): Promise<void> {
+  const API_URL = import.meta.env.VITE_API_URL as string
+  const res = await fetch(`${API_URL}/api/clients/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(await res.text())
 }
 
 export async function saveState(state: AppState): Promise<void> {

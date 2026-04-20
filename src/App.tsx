@@ -1,8 +1,10 @@
 import './App.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TrackingView } from './components/TrackingView'
-import type { AppState, Task } from './types'
-import { loadState, saveState } from './lib/storage'
+import { OverviewView } from './components/OverviewView'
+import { ClientsView } from './components/ClientsView'
+import type { AppState, Client, Task } from './types'
+import { loadState, saveState, loadClients, createClientApi } from './lib/storage'
 import { useTimerEngine } from './hooks/useTimerEngine'
 import {
   addDays,
@@ -15,7 +17,6 @@ import {
   formatMinutesAsHoursMinutes,
   getMondayOfWeek,
 } from './lib/timeUtils'
-import { OverviewView } from './components/OverviewView'
 import { buildCsvFromDailySummary } from './lib/csv'
 
 type View = 'tracking' | 'overview'
@@ -34,7 +35,7 @@ function App() {
   if (loadError) {
     return (
       <div className="app-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: 'var(--color-danger, red)' }}>Failed to load: {loadError}</p>
+        <p style={{ color: 'red' }}>Failed to load: {loadError}</p>
       </div>
     )
   }
@@ -52,6 +53,10 @@ function App() {
 // Inner shell: owns all app logic once data is loaded
 function AppLoaded({ initialState }: { initialState: AppState }) {
   const [view, setView] = useState<View>('tracking')
+  const [showClients, setShowClients] = useState(false)
+  const [clients, setClients] = useState<Client[]>([])
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+
   const handleSave = useCallback((state: AppState) => {
     saveState(state).catch(console.error)
   }, [])
@@ -59,7 +64,40 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
   const engine = useTimerEngine(initialState, handleSave)
   const { state, now } = engine
 
-  const summaryRows = useMemo(() => buildDailySummary(state.tasks, now), [state.tasks, now])
+  async function refreshClients() {
+    const fetched = await loadClients()
+    setClients(fetched)
+    return fetched
+  }
+
+  // Initial client fetch
+  useEffect(() => {
+    refreshClients().then((fetched) => {
+      if (fetched.length === 0) {
+        setShowClients(true)
+      } else {
+        const first = fetched.find((c) => c.visibleInTabs) ?? fetched[0]
+        setSelectedClientId(first.id)
+      }
+    })
+  }, [])
+
+  function handleClientCreated(client: Client) {
+    setSelectedClientId(client.id)
+    setShowClients(false)
+    setView('tracking')
+  }
+
+  const selectedClient = clients.find((c) => c.id === selectedClientId) ?? null
+  const visibleClients = clients.filter((c) => c.visibleInTabs)
+
+  // Filter all data to selected client
+  const clientTasks = useMemo(
+    () => state.tasks.filter((t) => t.client === selectedClient?.name),
+    [state.tasks, selectedClient],
+  )
+
+  const summaryRows = useMemo(() => buildDailySummary(clientTasks, now), [clientTasks, now])
 
   const todayKey = dateKeyFromDate(now)
   const thisWeekMonday = getMondayOfWeek(todayKey)
@@ -106,7 +144,6 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
   }
 
   const totalMinutes = computeTotalMinutes(summaryRows)
-
   const maxBarMinutes = Math.max(thisWeek.total, lastWeek.total, avgWeek?.total ?? 0)
   const barMax = maxBarMinutes === 0 ? 1 : maxBarMinutes * 1.1
   const lastWeekBarPct = (lastWeek.total / barMax) * 100
@@ -120,18 +157,19 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = 'time-report.csv'
+    link.download = `time-report-${selectedClient?.name ?? 'export'}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
   }
 
-  function handleCreateTask(client: string, topic: string, startRunning: boolean) {
+  function handleCreateTask(topic: string, startRunning: boolean) {
+    if (!selectedClient) return
     const createdAt = new Date().toISOString()
     const newTask: Task = {
       id: crypto.randomUUID(),
-      client,
+      client: selectedClient.name,
       topic,
       createdAt,
       updatedAt: createdAt,
@@ -156,75 +194,128 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     }))
   }
 
+  function selectClient(clientId: string) {
+    setSelectedClientId(clientId)
+    setShowClients(false)
+  }
+
+  const pageTitle = showClients
+    ? 'Manage clients'
+    : view === 'tracking'
+    ? selectedClient?.name ?? 'Tracking'
+    : selectedClient?.name ?? 'Overview'
+
   return (
     <div className="app-root">
       <aside className="sidebar">
         <h1 className="app-title">Time Reporter</h1>
-        <nav className="nav">
-          <button
-            className={view === 'tracking' ? 'nav-item active' : 'nav-item'}
-            onClick={() => setView('tracking')}
-          >
-            Tracking
-          </button>
-          <button
-            className={view === 'overview' ? 'nav-item active' : 'nav-item'}
-            onClick={() => setView('overview')}
-          >
-            Overview
-          </button>
-        </nav>
         <div className="sidebar-footer">
-          <div className="sidebar-stat-group">
-            <div className="sidebar-stat-group-title">Today</div>
-            <div className="stat-value-only">{formatMinutesAsHoursMinutes(todayMinutes)}</div>
-          </div>
-          <hr className="sidebar-divider" />
-          <div className="sidebar-stat-group">
-            <div className="sidebar-stat-group-title">Weekly</div>
-            {maxBarMinutes > 0 && (
-              <div className="week-bar-chart">
-                <div className="week-bar-label-col">
-                  <div className="week-bar-row-label">This</div>
-                  <div className="week-bar-row-label">Last</div>
-                </div>
-                <div className="week-bar-tracks">
-                  <div className="week-bar week-bar--this-week" style={{ width: `${thisWeekBarPct}%` }} />
-                  <div className="week-bar week-bar--last-week" style={{ width: `${lastWeekBarPct}%` }} />
-                  {avgWeekBarPct !== null && (
-                    <div className="week-bar-avg-line" style={{ left: `${avgWeekBarPct}%` }} />
-                  )}
-                </div>
-                <div className="week-bar-value-col">
-                  <div className="week-bar-row-value">{formatMinutesAsHoursMinutes(thisWeek.total)}</div>
-                  <div className="week-bar-row-value">{formatMinutesAsHoursMinutes(lastWeek.total)}</div>
-                </div>
+          {selectedClient && (
+            <>
+              <div className="sidebar-stat-group">
+                <div className="sidebar-stat-group-title">Today</div>
+                <div className="stat-value-only">{formatMinutesAsHoursMinutes(todayMinutes)}</div>
               </div>
-            )}
-            {avgWeek !== null && (
-              <div className="week-bar-avg-note">avg {formatMinutesAsHoursMinutes(avgWeek.total)}/wk ({numWeeks}w)</div>
-            )}
-          </div>
-          <hr className="sidebar-divider" />
-          <div className="sidebar-stat-group">
-            <div className="sidebar-stat-group-title">All time</div>
-            <div className="stat-value-only">{formatMinutesAsHoursMinutes(totalMinutes)}</div>
-          </div>
+              <hr className="sidebar-divider" />
+              <div className="sidebar-stat-group">
+                <div className="sidebar-stat-group-title">Weekly</div>
+                {maxBarMinutes > 0 && (
+                  <div className="week-bar-chart">
+                    <div className="week-bar-label-col">
+                      <div className="week-bar-row-label">This</div>
+                      <div className="week-bar-row-label">Last</div>
+                    </div>
+                    <div className="week-bar-tracks">
+                      <div className="week-bar week-bar--this-week" style={{ width: `${thisWeekBarPct}%` }} />
+                      <div className="week-bar week-bar--last-week" style={{ width: `${lastWeekBarPct}%` }} />
+                      {avgWeekBarPct !== null && (
+                        <div className="week-bar-avg-line" style={{ left: `${avgWeekBarPct}%` }} />
+                      )}
+                    </div>
+                    <div className="week-bar-value-col">
+                      <div className="week-bar-row-value">{formatMinutesAsHoursMinutes(thisWeek.total)}</div>
+                      <div className="week-bar-row-value">{formatMinutesAsHoursMinutes(lastWeek.total)}</div>
+                    </div>
+                  </div>
+                )}
+                {avgWeek !== null && (
+                  <div className="week-bar-avg-note">avg {formatMinutesAsHoursMinutes(avgWeek.total)}/wk ({numWeeks}w)</div>
+                )}
+              </div>
+              <hr className="sidebar-divider" />
+              <div className="sidebar-stat-group">
+                <div className="sidebar-stat-group-title">All time</div>
+                <div className="stat-value-only">{formatMinutesAsHoursMinutes(totalMinutes)}</div>
+              </div>
+            </>
+          )}
         </div>
       </aside>
+
       <main className="main">
-        <header className="main-header">
-          <h2>{view === 'tracking' ? 'Tracking' : 'Overview'}</h2>
-          <button onClick={exportCsv} disabled={summaryRows.length === 0}>
-            Export CSV
+        {/* Client tab bar */}
+        <div className="client-tabs">
+          {visibleClients.map((c) => (
+            <button
+              key={c.id}
+              className={`client-tab${!showClients && selectedClientId === c.id ? ' active' : ''}`}
+              onClick={() => selectClient(c.id)}
+            >
+              <span className="client-tab-dot" style={{ background: c.color }} />
+              {c.name}
+            </button>
+          ))}
+          <button
+            className={`client-tab client-tab-manage${showClients ? ' active' : ''}`}
+            onClick={() => setShowClients(true)}
+          >
+            Manage
           </button>
-        </header>
+        </div>
+
+        {/* View sub-tabs (only when a client is selected) */}
+        {!showClients && selectedClient && (
+          <div className="view-tabs">
+            <button
+              className={`view-tab${view === 'tracking' ? ' active' : ''}`}
+              onClick={() => setView('tracking')}
+            >
+              Tracking
+            </button>
+            <button
+              className={`view-tab${view === 'overview' ? ' active' : ''}`}
+              onClick={() => setView('overview')}
+            >
+              Overview
+            </button>
+            <div className="view-tabs-spacer" />
+            <button onClick={exportCsv} disabled={summaryRows.length === 0}>
+              Export CSV
+            </button>
+          </div>
+        )}
+
         <section className="main-content">
-          {view === 'tracking' ? (
+          {showClients ? (
+            <ClientsView
+              clients={clients}
+              onRefresh={refreshClients}
+              onClientCreated={handleClientCreated}
+            />
+          ) : !selectedClient ? (
+            <p className="empty" style={{ padding: '1rem' }}>
+              No client selected. Add one in{' '}
+              <button className="link-button" onClick={() => setShowClients(true)}>
+                Manage clients
+              </button>
+              .
+            </p>
+          ) : view === 'tracking' ? (
             <TrackingView
-              tasks={state.tasks}
+              tasks={clientTasks}
               now={now}
               activeTaskId={engine.activeTaskId}
+              clientColor={selectedClient.color}
               onCreateTask={handleCreateTask}
               onStartTimer={engine.startTimer}
               onPauseTimer={engine.pauseTimer}

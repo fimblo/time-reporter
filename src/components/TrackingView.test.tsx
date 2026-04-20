@@ -5,26 +5,24 @@ import type { Task } from '../types'
 
 const now = new Date('2026-02-19T12:00:00.000Z')
 
+const baseProps = {
+  tasks: [] as Task[],
+  now,
+  clientColor: '#6366f1',
+  onCreateTask: vi.fn(),
+  onStartTimer: vi.fn(),
+  onPauseTimer: vi.fn(),
+  onUpdateTask: vi.fn(),
+  onDeleteTask: vi.fn(),
+}
+
 describe('TrackingView', () => {
-  it('calls onCreateTask when form is submitted with client and topic', () => {
+  it('calls onCreateTask when form is submitted with a topic', () => {
     const onCreateTask = vi.fn()
-    render(
-      <TrackingView
-        tasks={[]}
-        now={now}
-        onCreateTask={onCreateTask}
-        onStartTimer={vi.fn()}
-        onPauseTimer={vi.fn()}
-        onUpdateTask={vi.fn()}
-        onDeleteTask={vi.fn()}
-      />,
-    )
-    const clientInput = screen.getByPlaceholderText(/client name/i)
-    const topicInput = screen.getByPlaceholderText(/coaching|project/i)
-    fireEvent.change(clientInput, { target: { value: 'Acme Corp' } })
-    fireEvent.change(topicInput, { target: { value: 'Coaching' } })
+    render(<TrackingView {...baseProps} onCreateTask={onCreateTask} />)
+    fireEvent.change(screen.getByPlaceholderText(/coaching|project/i), { target: { value: 'Coaching' } })
     fireEvent.click(screen.getByRole('button', { name: /create task/i }))
-    expect(onCreateTask).toHaveBeenCalledWith('Acme Corp', 'Coaching', true)
+    expect(onCreateTask).toHaveBeenCalledWith('Coaching', true)
   })
 
   it('shows a task created today in the list even with 0 minutes', () => {
@@ -36,34 +34,13 @@ describe('TrackingView', () => {
       updatedAt: now.toISOString(),
       intervals: [],
     }
-    render(
-      <TrackingView
-        tasks={[newTask]}
-        now={now}
-        onCreateTask={vi.fn()}
-        onStartTimer={vi.fn()}
-        onPauseTimer={vi.fn()}
-        onUpdateTask={vi.fn()}
-        onDeleteTask={vi.fn()}
-      />,
-    )
-    expect(screen.getByText('Acme Corp')).toBeInTheDocument()
+    render(<TrackingView {...baseProps} tasks={[newTask]} />)
     expect(screen.getByText('Coaching')).toBeInTheDocument()
   })
 
-  it('does not call onCreateTask when both client and topic are empty', () => {
+  it('does not call onCreateTask when topic is empty', () => {
     const onCreateTask = vi.fn()
-    render(
-      <TrackingView
-        tasks={[]}
-        now={now}
-        onCreateTask={onCreateTask}
-        onStartTimer={vi.fn()}
-        onPauseTimer={vi.fn()}
-        onUpdateTask={vi.fn()}
-        onDeleteTask={vi.fn()}
-      />,
-    )
+    render(<TrackingView {...baseProps} onCreateTask={onCreateTask} />)
     fireEvent.click(screen.getByRole('button', { name: /create task/i }))
     expect(onCreateTask).not.toHaveBeenCalled()
   })
@@ -76,25 +53,10 @@ describe('TrackingView', () => {
       createdAt: '2026-02-19T08:00:00.000Z',
       updatedAt: '2026-02-19T10:00:00.000Z',
       intervals: [
-        {
-          id: 'i1',
-          taskId: 't1',
-          start: '2026-02-19T09:00:00.000Z',
-          end: '2026-02-19T10:30:00.000Z',
-        },
+        { id: 'i1', taskId: 't1', start: '2026-02-19T09:00:00.000Z', end: '2026-02-19T10:30:00.000Z' },
       ],
     }
-    render(
-      <TrackingView
-        tasks={[taskWithTime]}
-        now={now}
-        onCreateTask={vi.fn()}
-        onStartTimer={vi.fn()}
-        onPauseTimer={vi.fn()}
-        onUpdateTask={vi.fn()}
-        onDeleteTask={vi.fn()}
-      />,
-    )
+    render(<TrackingView {...baseProps} tasks={[taskWithTime]} />)
     expect(screen.getByText(/1h 30m today/)).toBeInTheDocument()
   })
 
@@ -106,41 +68,19 @@ describe('TrackingView', () => {
       topic: 'Coaching',
       createdAt: '2026-02-19T08:00:00.000Z',
       updatedAt: '2026-02-19T10:00:00.000Z',
-      intervals: [
-        {
-          id: 'i1',
-          taskId: 't1',
-          start: '2026-02-19T10:00:00.000Z',
-          end: null,
-        },
-      ],
+      intervals: [{ id: 'i1', taskId: 't1', start: '2026-02-19T10:00:00.000Z', end: null }],
     }
     const { rerender } = render(
-      <TrackingView
-        tasks={[taskWithActiveInterval]}
-        now={baseTime}
-        activeTaskId="t1"
-        onCreateTask={vi.fn()}
-        onStartTimer={vi.fn()}
-        onPauseTimer={vi.fn()}
-        onUpdateTask={vi.fn()}
-        onDeleteTask={vi.fn()}
-      />,
+      <TrackingView {...baseProps} tasks={[taskWithActiveInterval]} now={baseTime} activeTaskId="t1" />,
     )
-    const timeEl = screen.getByText(/today$/)
-    const initialText = timeEl.textContent ?? ''
+    const initialText = screen.getByText(/today$/).textContent ?? ''
 
-    const oneMinuteLater = new Date('2026-02-19T10:01:00.000Z')
     rerender(
       <TrackingView
+        {...baseProps}
         tasks={[taskWithActiveInterval]}
-        now={oneMinuteLater}
+        now={new Date('2026-02-19T10:01:00.000Z')}
         activeTaskId="t1"
-        onCreateTask={vi.fn()}
-        onStartTimer={vi.fn()}
-        onPauseTimer={vi.fn()}
-        onUpdateTask={vi.fn()}
-        onDeleteTask={vi.fn()}
       />,
     )
     const laterText = screen.getByText(/today$/).textContent ?? ''
@@ -158,82 +98,35 @@ describe('TrackingView', () => {
       intervals: [],
     }
     const onDeleteTask = vi.fn()
-    render(
-      <TrackingView
-        tasks={[task]}
-        now={now}
-        onCreateTask={vi.fn()}
-        onStartTimer={vi.fn()}
-        onPauseTimer={vi.fn()}
-        onUpdateTask={vi.fn()}
-        onDeleteTask={onDeleteTask}
-      />,
-    )
+    render(<TrackingView {...baseProps} tasks={[task]} onDeleteTask={onDeleteTask} />)
     fireEvent.click(screen.getByRole('button', { name: /delete/i }))
     expect(onDeleteTask).toHaveBeenCalledWith('task-to-delete')
   })
 
   it('each task row has a Delete button', () => {
     const tasks: Task[] = [
-      {
-        id: 't1',
-        client: 'Client A',
-        topic: 'Topic 1',
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-        intervals: [],
-      },
-      {
-        id: 't2',
-        client: 'Client B',
-        topic: 'Topic 2',
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-        intervals: [],
-      },
+      { id: 't1', client: 'Client A', topic: 'Topic 1', createdAt: now.toISOString(), updatedAt: now.toISOString(), intervals: [] },
+      { id: 't2', client: 'Client B', topic: 'Topic 2', createdAt: now.toISOString(), updatedAt: now.toISOString(), intervals: [] },
     ]
-    render(
-      <TrackingView
-        tasks={tasks}
-        now={now}
-        onCreateTask={vi.fn()}
-        onStartTimer={vi.fn()}
-        onPauseTimer={vi.fn()}
-        onUpdateTask={vi.fn()}
-        onDeleteTask={vi.fn()}
-      />,
-    )
-    const deleteButtons = screen.getAllByRole('button', { name: /delete/i })
-    expect(deleteButtons).toHaveLength(2)
+    render(<TrackingView {...baseProps} tasks={tasks} />)
+    expect(screen.getAllByRole('button', { name: /delete/i })).toHaveLength(2)
   })
 
   it('displays time with seconds for the active task so it can increase every second', () => {
-    const baseTime = new Date('2026-02-19T10:00:00.000Z')
     const taskWithActiveInterval: Task = {
       id: 't1',
       client: 'Acme',
       topic: 'Coaching',
       createdAt: '2026-02-19T08:00:00.000Z',
       updatedAt: '2026-02-19T10:00:00.000Z',
-      intervals: [
-        {
-          id: 'i1',
-          taskId: 't1',
-          start: '2026-02-19T10:00:00.000Z',
-          end: null,
-        },
-      ],
+      intervals: [{ id: 'i1', taskId: 't1', start: '2026-02-19T10:00:00.000Z', end: null }],
     }
     render(
       <TrackingView
+        {...baseProps}
         tasks={[taskWithActiveInterval]}
         now={new Date('2026-02-19T10:00:01.500Z')}
         activeTaskId="t1"
-        onCreateTask={vi.fn()}
-        onStartTimer={vi.fn()}
-        onPauseTimer={vi.fn()}
-        onUpdateTask={vi.fn()}
-        onDeleteTask={vi.fn()}
       />,
     )
     expect(screen.getByText(/1s today|0m 1s today|\d+s today/)).toBeInTheDocument()

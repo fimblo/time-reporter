@@ -11,7 +11,8 @@ interface TrackingViewProps {
   tasks: Task[]
   now: Date
   activeTaskId?: string
-  onCreateTask: (client: string, topic: string, startRunning: boolean) => void
+  clientColor: string
+  onCreateTask: (topic: string, startRunning: boolean) => void
   onStartTimer: (taskId: string) => void
   onPauseTimer: () => void
   onUpdateTask: (task: Task) => void
@@ -19,7 +20,6 @@ interface TrackingViewProps {
 }
 
 interface EditableTask extends Task {
-  localClient: string
   localTopic: string
 }
 
@@ -45,12 +45,8 @@ function todayKey(now: Date): string {
 }
 
 export function TrackingView(props: TrackingViewProps) {
-  const { tasks, now, activeTaskId, onCreateTask, onStartTimer, onPauseTimer, onUpdateTask, onDeleteTask } =
+  const { tasks, now, activeTaskId, clientColor, onCreateTask, onStartTimer, onPauseTimer, onUpdateTask, onDeleteTask } =
     props
-  const [client, setClient] = useState(() => {
-    if (tasks.length === 0) return ''
-    return [...tasks].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0].client
-  })
   const [topic, setTopic] = useState('')
   const [startRunning, setStartRunning] = useState(true)
   const [editingTask, setEditingTask] = useState<EditableTask | null>(null)
@@ -75,17 +71,13 @@ export function TrackingView(props: TrackingViewProps) {
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    if (!client.trim() && !topic.trim()) return
-    onCreateTask(client.trim(), topic.trim(), startRunning)
+    if (!topic.trim()) return
+    onCreateTask(topic.trim(), startRunning)
     setTopic('')
   }
 
   function openEdit(task: Task) {
-    setEditingTask({
-      ...task,
-      localClient: task.client,
-      localTopic: task.topic,
-    })
+    setEditingTask({ ...task, localTopic: task.topic })
   }
 
   function updateOverrideMinutes(date: string, minutes: number) {
@@ -103,19 +95,15 @@ export function TrackingView(props: TrackingViewProps) {
 
   function saveEdit() {
     if (!editingTask) return
-    const { localClient, localTopic, ...rest } = editingTask
-    onUpdateTask({
-      ...rest,
-      client: localClient,
-      topic: localTopic,
-    })
+    const { localTopic, ...rest } = editingTask
+    onUpdateTask({ ...rest, topic: localTopic })
     setEditingTask(null)
   }
 
   const editableDates = useMemo(() => {
     if (!editingTask) return []
     const dates = new Set<string>()
-    dates.add(today) // always include today (modal only opens from today's task list)
+    dates.add(today)
     for (const interval of editingTask.intervals) {
       dates.add(dateKeyFromDate(new Date(interval.start)))
     }
@@ -132,14 +120,6 @@ export function TrackingView(props: TrackingViewProps) {
       <section className="panel">
         <h2>New task</h2>
         <form onSubmit={handleCreate} className="new-task-form">
-          <label>
-            <span>Client</span>
-            <input
-              value={client}
-              onChange={(e) => setClient(e.target.value)}
-              placeholder="Client name"
-            />
-          </label>
           <label>
             <span>Topic</span>
             <input
@@ -169,10 +149,13 @@ export function TrackingView(props: TrackingViewProps) {
             {tasksWithToday.map(({ task, minutesToday }) => {
               const isActive = activeTaskId === task.id
               return (
-                <li key={task.id} className={isActive ? 'task-row active' : 'task-row'}>
+                <li
+                  key={task.id}
+                  className={isActive ? 'task-row active' : 'task-row'}
+                  style={{ borderLeftColor: clientColor, borderLeftWidth: '4px' }}
+                >
                   <div className="task-main">
                     <div className="task-title">
-                      <span className="task-client">{task.client || 'No client'}</span>
                       <span className="task-topic">{task.topic || 'No topic'}</span>
                     </div>
                     <div className="task-time">
@@ -203,98 +186,81 @@ export function TrackingView(props: TrackingViewProps) {
             <h3>Edit task</h3>
             <div className="modal-body">
               <label>
-                <span>Client</span>
-                <input
-                  value={editingTask.localClient}
-                  onChange={(e) =>
-                    setEditingTask({
-                      ...editingTask,
-                      localClient: e.target.value,
-                    })
-                  }
-                />
-              </label>
-              <label>
                 <span>Topic</span>
                 <input
                   value={editingTask.localTopic}
-                  onChange={(e) =>
-                    setEditingTask({
-                      ...editingTask,
-                      localTopic: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setEditingTask({ ...editingTask, localTopic: e.target.value })}
                 />
               </label>
 
               <div className="daily-table">
-                  <h4>Daily time</h4>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Hours</th>
-                        <th>Minutes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {editableDates.map((date) => {
-                        const totalMinutes = computeMinutesToday(editingTask, date, now)
-                        const hours = Math.floor(totalMinutes / 60)
-                        const mins = totalMinutes % 60
-                        return (
-                          <tr key={date}>
-                            <td>{date}</td>
-                            <td>
-                              <input
-                                type="number"
-                                min={0}
-                                aria-label={`Hours for ${date}`}
-                                value={hours}
-                                onChange={(e) => {
-                                  const h = Number.parseInt(e.target.value, 10) || 0
-                                  updateOverrideMinutes(date, h * 60 + mins)
-                                }}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                min={0}
-                                max={59}
-                                aria-label={`Minutes for ${date}`}
-                                value={mins}
-                                onChange={(e) => {
-                                  const m = Math.min(59, Math.max(0, Number.parseInt(e.target.value, 10) || 0))
-                                  updateOverrideMinutes(date, hours * 60 + m)
-                                }}
-                              />
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                  <div className="add-date-row">
-                    <input
-                      type="date"
-                      value={newDateInput}
-                      max={today}
-                      onChange={(e) => setNewDateInput(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (newDateInput && !editableDates.includes(newDateInput)) {
-                          updateOverrideMinutes(newDateInput, 0)
-                        }
-                      }}
-                      disabled={!newDateInput || editableDates.includes(newDateInput)}
-                    >
-                      Add date
-                    </button>
-                  </div>
+                <h4>Daily time</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Hours</th>
+                      <th>Minutes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {editableDates.map((date) => {
+                      const totalMinutes = computeMinutesToday(editingTask, date, now)
+                      const hours = Math.floor(totalMinutes / 60)
+                      const mins = totalMinutes % 60
+                      return (
+                        <tr key={date}>
+                          <td>{date}</td>
+                          <td>
+                            <input
+                              type="number"
+                              min={0}
+                              aria-label={`Hours for ${date}`}
+                              value={hours}
+                              onChange={(e) => {
+                                const h = Number.parseInt(e.target.value, 10) || 0
+                                updateOverrideMinutes(date, h * 60 + mins)
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              min={0}
+                              max={59}
+                              aria-label={`Minutes for ${date}`}
+                              value={mins}
+                              onChange={(e) => {
+                                const m = Math.min(59, Math.max(0, Number.parseInt(e.target.value, 10) || 0))
+                                updateOverrideMinutes(date, hours * 60 + m)
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+                <div className="add-date-row">
+                  <input
+                    type="date"
+                    value={newDateInput}
+                    max={today}
+                    onChange={(e) => setNewDateInput(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newDateInput && !editableDates.includes(newDateInput)) {
+                        updateOverrideMinutes(newDateInput, 0)
+                      }
+                    }}
+                    disabled={!newDateInput || editableDates.includes(newDateInput)}
+                  >
+                    Add date
+                  </button>
                 </div>
+              </div>
             </div>
             <div className="modal-footer">
               <button onClick={() => setEditingTask(null)}>Cancel</button>
@@ -323,4 +289,3 @@ function isCreatedToday(task: Task, todayKey: string): boolean {
   const key = `${year}-${month}-${day}`
   return key === todayKey
 }
-
