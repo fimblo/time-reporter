@@ -1,7 +1,6 @@
 import './App.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TrackingView } from './components/TrackingView'
-import { MigrationCheck } from './components/MigrationCheck'
 import type { AppState, Task } from './types'
 import { loadState, saveState } from './lib/storage'
 import { useTimerEngine } from './hooks/useTimerEngine'
@@ -53,8 +52,6 @@ function App() {
 // Inner shell: owns all app logic once data is loaded
 function AppLoaded({ initialState }: { initialState: AppState }) {
   const [view, setView] = useState<View>('tracking')
-  const [showMigrationCheck, setShowMigrationCheck] = useState(false)
-
   const handleSave = useCallback((state: AppState) => {
     saveState(state).catch(console.error)
   }, [])
@@ -218,18 +215,10 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
       <main className="main">
         <header className="main-header">
           <h2>{view === 'tracking' ? 'Tracking' : 'Overview'}</h2>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {/* TEMPORARY — remove after migration verified */}
-            <button onClick={() => setShowMigrationCheck((v) => !v)}>
-              {showMigrationCheck ? 'Hide verify' : 'Verify migration'}
-            </button>
-            <button onClick={exportCsv} disabled={summaryRows.length === 0}>
-              Export CSV
-            </button>
-          </div>
+          <button onClick={exportCsv} disabled={summaryRows.length === 0}>
+            Export CSV
+          </button>
         </header>
-        {/* TEMPORARY — remove after migration verified */}
-        {showMigrationCheck && <MigrationCheck />}
         <section className="main-content">
           {view === 'tracking' ? (
             <TrackingView
