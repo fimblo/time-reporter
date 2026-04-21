@@ -1,51 +1,30 @@
 # time-reporter
 
-A time tracking app. Log work by client and topic, track intervals through the day, and review summaries in the Overview. Export to CSV for invoicing.
+A lightweight time tracking app for freelancers and consultants who bill multiple clients.
 
-State is persisted in SQLite via an Express backend.
+Track work by client and topic throughout the day, review daily and weekly summaries, and export to CSV for invoicing. Time is stored locally in SQLite — no cloud account required.
 
-## Running
+## Features
 
-Install dependencies:
+- **Client-focused** — switch between clients with a tab; each client has its own colour and history
+- **Interval tracking** — start and stop a timer; intervals are stored and aggregated by day
+- **Manual overrides** — adjust reported time for any day directly in the edit dialog; subsequent timer use adds on top
+- **Overview** — weekly bar chart and a full history table grouped by week, with totals
+- **CSV export** — export per-client time data with a UTF-8 BOM so it opens correctly in Excel and Numbers
+
+## Getting started
+
+Install dependencies and start the backend and frontend:
 
 ```bash
 npm install
+node --experimental-strip-types server/index.ts   # terminal 1
+npm run dev                                        # terminal 2
 ```
 
-Start the backend (port 3001):
-
-```bash
-node --experimental-strip-types server/index.ts
-```
-
-Start the frontend dev server (port 5173) in a second terminal:
-
-```bash
-npm run dev
-```
-
-The frontend is pre-configured to talk to the backend via `VITE_API_URL=http://localhost:3001` in `.env.local`.
-
-## Tests
-
-Frontend (Vitest, jsdom):
-
-```bash
-npm run test
-```
-
-Backend / database layer (Vitest, Node environment):
-
-```bash
-npx vitest run server/db.test.ts
-```
-
-Or run everything at once:
-
-```bash
-npx vitest run
-```
+Then open [http://localhost:5173](http://localhost:5173).
 
 ---
 
-[CLAUDE.md](CLAUDE.md) — architecture notes and instructions for AI-assisted development.
+[CLAUDE.md](CLAUDE.md) — architecture and development notes.
+[LICENSE](LICENSE)
