@@ -21,7 +21,7 @@ node --experimental-strip-types server/index.ts
 
 ## Architecture
 
-This is a React + TypeScript SPA built with Vite. All state is persisted to `localStorage` by default, with an optional Express + SQLite backend.
+This is a React + TypeScript SPA built with Vite, backed by an Express + SQLite server.
 
 **Frontend state flow:**
 - `App.tsx` owns `AppState` (tasks + lastActiveTaskId)
@@ -29,6 +29,7 @@ This is a React + TypeScript SPA built with Vite. All state is persisted to `loc
 - `App.tsx` computes derived data (`buildDailySummary`, totals) with `useMemo` and passes it down to views.
 
 **Core data model** (`src/types.ts`):
+- `Client` has `id`, `name`, `color`, and `visibleInTabs`. Tasks belong to a client by name.
 - `Task` contains `intervals: Interval[]` (start/end ISO timestamps) and optional `overrides: DailyOverride[]`.
 - A `DailyOverride` has a `minutesOverride` value and an optional `setAt` ISO timestamp. When `setAt` is present, the override is a *base*: intervals starting after `setAt` add on top. Legacy overrides (no `setAt`) replace all interval minutes for that day.
 - An `Interval` with `end === null` is the currently running interval (only one allowed across all tasks).
@@ -36,10 +37,10 @@ This is a React + TypeScript SPA built with Vite. All state is persisted to `loc
 **`buildDailySummary`** (`src/lib/timeUtils.ts`) aggregates intervals by calendar day in local time, then applies overrides. This is the canonical source of truth for reported minutes.
 
 **Storage:**
-- Frontend: `localStorage` key `time-reporter-state-v1`, full `AppState` JSON.
-- Backend (`server/`): SQLite via `better-sqlite3`. Schema has `tasks`, `intervals`, `daily_overrides`, and `meta` tables. The server exposes `GET /api/state` and `PUT /api/state`; the frontend uses `VITE_API_URL` env var to optionally point at it instead of localStorage.
+- Backend (`server/`): SQLite via `better-sqlite3`. Schema has `clients`, `tasks`, `intervals`, `daily_overrides`, and `meta` tables. The server exposes `GET /api/state`, `PUT /api/state`, `GET /api/clients`, `POST /api/clients`, and `PUT /api/clients/:id`.
+- Frontend uses `VITE_API_URL` (set to `http://localhost:3001` in `.env.local`) to talk to the backend. Falls back to `localStorage` when unset (test environment only).
 
-**Tests:** Vitest with jsdom. Test files colocated as `*.test.ts(x)`. Tests cover `src/lib/` functions only — no UI/component tests, no Playwright.
+**Tests:** Vitest with jsdom for frontend, Node environment for backend. Test files colocated as `*.test.ts(x)`. `server/db.test.ts` covers the database layer; `src/lib/` tests cover time calculations and CSV export.
 
 ## Commit style
 
