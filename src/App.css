@@ -516,7 +516,6 @@ input[type="number"] { width: 72px; }
 }
 
 .task-title { display: flex; gap: 0.5rem; font-size: 0.9rem; }
-.task-client { font-weight: 600; }
 .task-topic  { color: var(--text-2); }
 
 .task-time {
@@ -726,14 +725,6 @@ input[type="number"] { width: 72px; }
   padding-top: 0.6rem;
   padding-bottom: 0.4rem;
   border-bottom: 2px solid var(--border);
-}
-
-/* ─── Main header ────────────────────────────────────────────────────────── */
-.main-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
 }
 
 /* ─── Clients view ───────────────────────────────────────────────────────── */

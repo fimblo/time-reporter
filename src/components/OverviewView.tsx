@@ -1,10 +1,13 @@
 import { Fragment, useState } from 'react'
 import type { DailySummaryRow, Task } from '../types'
 import {
+  addDays,
   computeActiveDays,
   computeDailyAverageMinutes,
   computeTotalMinutes,
+  dateKeyFromDate,
   formatMinutesAsHoursMinutes,
+  getMondayOfWeek,
 } from '../lib/timeUtils'
 
 interface OverviewViewProps {
@@ -20,30 +23,6 @@ interface EditState {
   topic: string
   hours: number
   mins: number
-}
-
-function dateKeyFromDate(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function getMondayOfWeek(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
-  const day = date.getDay() // 0=Sun
-  const diff = day === 0 ? -6 : 1 - day
-  const monday = new Date(date)
-  monday.setDate(date.getDate() + diff)
-  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
-}
-
-function addDays(dateStr: string, n: number): string {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
-  date.setDate(date.getDate() + n)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 function formatWeekLabel(mondayStr: string): string {
@@ -307,7 +286,7 @@ export function OverviewView({ rows: allRows, tasks, now, onUpdateTask }: Overvi
             </div>
             <div className="modal-footer">
               <button onClick={() => setEditing(null)}>Cancel</button>
-              <button className="btn-primary" onClick={handleSave}>Save</button>
+              <button onClick={handleSave}>Save</button>
             </div>
           </div>
         </div>

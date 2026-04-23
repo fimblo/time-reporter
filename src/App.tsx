@@ -4,7 +4,7 @@ import { TrackingView } from './components/TrackingView'
 import { OverviewView } from './components/OverviewView'
 import { ClientsView } from './components/ClientsView'
 import type { AppState, Client, Task } from './types'
-import { loadState, saveState, loadClients, createClientApi } from './lib/storage'
+import { loadState, saveState, loadClients } from './lib/storage'
 import { useTimerEngine } from './hooks/useTimerEngine'
 import {
   addDays,
