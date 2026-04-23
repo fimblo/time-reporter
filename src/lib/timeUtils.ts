@@ -147,7 +147,9 @@ export function buildDailySummary(tasks: Task[], now: Date = new Date()): DailyS
     }
   }
 
-  return Array.from(byKey.values()).sort((a, b) => a.date.localeCompare(b.date))
+  return Array.from(byKey.values())
+    .filter((r) => r.minutes > 0)
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
 export function computeTotalMinutes(rows: DailySummaryRow[]): number {

@@ -209,6 +209,50 @@ describe('buildDailySummary', () => {
     expect(rows.length).toBe(1)
     expect(rows[0].minutes).toBe(90)
   })
+  it('0-minute legacy override produces no row', () => {
+    const task: Task = {
+      id: 't1',
+      client: 'Acme',
+      topic: 'Coaching',
+      createdAt: '2026-02-19T00:00:00.000Z',
+      updatedAt: '2026-02-19T00:00:00.000Z',
+      intervals: [
+        { id: 'i1', taskId: 't1', start: '2026-02-19T10:00:00.000Z', end: '2026-02-19T11:00:00.000Z' },
+      ],
+      overrides: [{ date: '2026-02-19', minutesOverride: 0 }],
+    }
+    const rows = buildDailySummary([task], new Date('2026-02-19T12:00:00.000Z'))
+    expect(rows).toHaveLength(0)
+  })
+  it('override-only entry (no intervals) produces a row', () => {
+    const task: Task = {
+      id: 't1',
+      client: 'Acme',
+      topic: 'Coaching',
+      createdAt: '2026-02-19T00:00:00.000Z',
+      updatedAt: '2026-02-19T00:00:00.000Z',
+      intervals: [],
+      overrides: [{ date: '2026-02-19', minutesOverride: 45 }],
+    }
+    const rows = buildDailySummary([task], new Date('2026-02-19T12:00:00.000Z'))
+    expect(rows).toHaveLength(1)
+    expect(rows[0].minutes).toBe(45)
+  })
+  it('two tasks with same client and topic on same date produce separate rows', () => {
+    const base = {
+      client: 'Acme', topic: 'Coaching',
+      createdAt: '2026-02-19T00:00:00.000Z', updatedAt: '2026-02-19T00:00:00.000Z',
+    }
+    const tasks: Task[] = [
+      { id: 't1', ...base, intervals: [{ id: 'i1', taskId: 't1', start: '2026-02-19T09:00:00.000Z', end: '2026-02-19T10:00:00.000Z' }] },
+      { id: 't2', ...base, intervals: [{ id: 'i2', taskId: 't2', start: '2026-02-19T11:00:00.000Z', end: '2026-02-19T11:30:00.000Z' }] },
+    ]
+    const rows = buildDailySummary(tasks, new Date('2026-02-19T12:00:00.000Z'))
+    expect(rows).toHaveLength(2)
+    expect(rows.map((r) => r.taskId).sort()).toEqual(['t1', 't2'])
+    expect(rows.find((r) => r.taskId === 't1')!.minutes).toBe(60)
+    expect(rows.find((r) => r.taskId === 't2')!.minutes).toBe(30)
+  })
   it('modern override (with setAt) acts as base, post-override intervals add on top', () => {
     const setAt = '2026-02-19T11:00:00.000Z'
     const task: Task = {

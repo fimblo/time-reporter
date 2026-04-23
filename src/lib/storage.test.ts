@@ -1,3 +1,7 @@
+// NOTE: These tests only exercise the localStorage fallback path in storage.ts.
+// That path is only reached when VITE_API_URL is unset (i.e. never in normal use
+// with the Express backend). The production code path — fetch-based API calls —
+// is covered indirectly by the db.test.ts integration tests.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import type { AppState, Task } from '../types'
 import { loadState, saveState } from './storage'

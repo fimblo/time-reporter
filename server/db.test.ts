@@ -123,6 +123,49 @@ describe('app state', () => {
     expect(loaded.tasks[0].intervals[0].end).toBeNull()
   })
 
+  it('saves and reloads legacy override (null set_at)', () => {
+    createClient({ name: 'Acme', color: '#6366f1' })
+    saveAppState({
+      tasks: [
+        {
+          id: 'task-1',
+          client: 'Acme',
+          topic: 'X',
+          createdAt: '2026-01-01T09:00:00.000Z',
+          updatedAt: '2026-01-01T09:00:00.000Z',
+          intervals: [],
+          overrides: [{ date: '2026-01-01', minutesOverride: 75 }],
+        },
+      ],
+    })
+    const loaded = loadAppState()
+    const override = loaded.tasks[0].overrides![0]
+    expect(override.minutesOverride).toBe(75)
+    expect(override.setAt).toBeUndefined()
+  })
+
+  it('throws when saving two overrides for the same task and date', () => {
+    createClient({ name: 'Acme', color: '#6366f1' })
+    expect(() =>
+      saveAppState({
+        tasks: [
+          {
+            id: 'task-1',
+            client: 'Acme',
+            topic: 'X',
+            createdAt: '2026-01-01T09:00:00.000Z',
+            updatedAt: '2026-01-01T09:00:00.000Z',
+            intervals: [],
+            overrides: [
+              { date: '2026-01-01', minutesOverride: 60 },
+              { date: '2026-01-01', minutesOverride: 90 },
+            ],
+          },
+        ],
+      }),
+    ).toThrow()
+  })
+
   it('saves and reloads daily overrides with setAt', () => {
     createClient({ name: 'Acme', color: '#6366f1' })
     saveAppState({
