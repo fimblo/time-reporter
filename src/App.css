@@ -616,6 +616,53 @@ input[type="number"] { width: 72px; }
   letter-spacing: 0.05em;
 }
 
+.detail-row .row-actions {
+  opacity: 0;
+  transition: opacity 0.1s;
+  white-space: nowrap;
+}
+
+.detail-row:hover .row-actions {
+  opacity: 1;
+}
+
+.btn-row-action {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  margin-left: 0.25rem;
+}
+
+.btn-row-action:hover:not(:disabled) {
+  background: #3c3836;
+  color: var(--text);
+  border-color: #665c54;
+}
+
+.btn-row-delete {
+  color: #fb4934;
+}
+
+.btn-row-delete:hover:not(:disabled) {
+  color: #fb4934;
+  border-color: #fb4934;
+  background: rgba(251,73,52,.1);
+}
+
+.time-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.time-inputs input {
+  width: 4rem;
+}
+
 /* ─── Overview stats ─────────────────────────────────────────────────────── */
 .overview-view .panel.stats {
   display: flex;

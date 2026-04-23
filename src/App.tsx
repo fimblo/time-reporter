@@ -338,7 +338,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               onDeleteTask={handleDeleteTask}
             />
           ) : (
-            <OverviewView rows={summaryRows} now={now} />
+            <OverviewView rows={summaryRows} tasks={clientTasks} now={now} onUpdateTask={handleUpdateTask} />
           )}
         </section>
       </main>
