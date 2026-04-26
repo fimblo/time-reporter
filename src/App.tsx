@@ -2,6 +2,7 @@ import './App.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TrackingView } from './components/TrackingView'
 import { OverviewView } from './components/OverviewView'
+import { ReportView } from './components/ReportView'
 import { ClientsView } from './components/ClientsView'
 import type { AppState, Client, Task } from './types'
 import { loadState, saveState, loadClients } from './lib/storage'
@@ -19,7 +20,7 @@ import {
 } from './lib/timeUtils'
 import { buildCsvFromDailySummary } from './lib/csv'
 
-type View = 'tracking' | 'overview'
+type View = 'tracking' | 'overview' | 'report'
 
 // Outer shell: handles async initial load
 function App() {
@@ -231,6 +232,12 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               >
                 Overview
               </button>
+              <button
+                className={`view-tab${view === 'report' ? ' active' : ''}`}
+                onClick={() => setView('report')}
+              >
+                Report
+              </button>
             </div>
             <div className="view-tabs-spacer" />
             <button className="btn-export" onClick={exportCsv} disabled={summaryRows.length === 0}>
@@ -337,8 +344,10 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
             />
-          ) : (
+          ) : view === 'overview' ? (
             <OverviewView rows={summaryRows} tasks={clientTasks} now={now} onUpdateTask={handleUpdateTask} />
+          ) : (
+            <ReportView rows={summaryRows} now={now} />
           )}
         </section>
       </main>
