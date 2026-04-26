@@ -920,63 +920,60 @@ input[type="number"] { width: 72px; }
   color: var(--text);
 }
 
-.report-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.group-input {
-  width: 100%;
-  min-width: 8rem;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid transparent;
-  border-radius: 0;
-  color: var(--text);
-  font-size: 0.85rem;
-  padding: 0.1rem 0.2rem;
-  transition: border-color 0.15s;
-}
-
-.group-input:focus {
-  outline: none;
-  border-bottom-color: var(--accent);
-  background: #3c3836;
-}
-
-.group-input::placeholder {
+/* Drag handle column — narrow, shows grab cursor */
+.report-drag-handle {
+  width: 1.2rem;
   color: var(--text-3);
-  font-style: italic;
+  cursor: grab;
+  user-select: none;
+  font-size: 1rem;
+  padding-right: 0.25rem !important;
 }
 
-.report-summary {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.5rem;
+.report-table .report-actions {
+  width: 1.5rem;
+  padding-left: 0.25rem !important;
 }
 
-.report-summary-table {
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  min-width: 280px;
+.report-time { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Dragging states */
+.report-row { cursor: default; }
+.report-row--dragging { opacity: 0.35; }
+.report-row--drag-over td { background: #3c3836; }
+.report-row--drag-over td:first-child { border-left: 3px solid var(--accent); }
+
+/* Grouped rows get a left accent stripe */
+.report-row--grouped td:first-child { border-left: 3px solid var(--accent); }
+
+/* Group header rows (collapsible) */
+.report-group-header {
+  cursor: pointer;
+  user-select: none;
 }
 
-.report-summary-table td {
-  padding: 0.3rem 0.75rem 0.3rem 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.report-summary-name { color: var(--text); }
-
-.report-summary-time {
-  text-align: right;
+.report-group-header td {
+  font-weight: 700;
+  font-size: 0.8rem;
   color: var(--text-2);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--border);
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  background: #32302f;
 }
 
-.report-summary-total td {
+.report-group-header:hover td { background: #3c3836; }
+
+.report-group-toggle {
+  font-size: 0.65rem;
+  color: var(--text-3);
+  width: 1.2rem;
+}
+
+/* Grand total row */
+.report-grand-total td {
   font-weight: 700;
   color: var(--text);
   border-bottom: none;
@@ -984,6 +981,24 @@ input[type="number"] { width: 72px; }
   padding-top: 0.5rem;
 }
 
+/* Detach button */
+.btn-detach {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.25rem;
+  border-radius: var(--r);
+  line-height: 1;
+}
+
+.btn-detach:hover {
+  color: #fb4934;
+  background: rgba(251,73,52,.1);
+}
+
+/* Copy button */
 .btn-copy-report {
   padding: 0.4rem 1rem;
   background: var(--accent);
@@ -993,15 +1008,6 @@ input[type="number"] { width: 72px; }
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
-  white-space: nowrap;
-  align-self: flex-start;
 }
 
-.btn-copy-report:hover:not(:disabled) {
-  filter: brightness(1.12);
-}
-
-.btn-copy-report:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.btn-copy-report:hover:not(:disabled) { filter: brightness(1.12); }
