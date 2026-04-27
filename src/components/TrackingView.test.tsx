@@ -20,7 +20,7 @@ describe('TrackingView', () => {
   it('calls onCreateTask when form is submitted with a topic', () => {
     const onCreateTask = vi.fn()
     render(<TrackingView {...baseProps} onCreateTask={onCreateTask} />)
-    fireEvent.change(screen.getByPlaceholderText(/coaching|project/i), { target: { value: 'Coaching' } })
+    fireEvent.change(screen.getByPlaceholderText(/project/i), { target: { value: 'Coaching' } })
     fireEvent.click(screen.getByRole('button', { name: /create task/i }))
     expect(onCreateTask).toHaveBeenCalledWith('Coaching', true)
   })

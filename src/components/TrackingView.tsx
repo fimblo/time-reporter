@@ -121,11 +121,11 @@ export function TrackingView(props: TrackingViewProps) {
         <h2>New task</h2>
         <form onSubmit={handleCreate} className="new-task-form">
           <label>
-            <span>Topic</span>
+            <span>Task name</span>
             <input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="Coaching / project / etc."
+              placeholder="Cost centre / project / task / etc."
             />
           </label>
           <label className="checkbox-row">
