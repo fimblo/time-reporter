@@ -10,6 +10,7 @@ Track work by client and topic throughout the day, review daily and weekly summa
 - **Interval tracking** — start and stop a timer; intervals are stored and aggregated by day
 - **Manual overrides** — adjust reported time for any day directly in the edit dialog; subsequent timer use adds on top
 - **Overview** — weekly bar chart and a full history table grouped by week, with edit and delete per entry
+- **Weekly report** — drag entries onto each other to form groups; groups are collapsible and persisted in the browser; copy a summary to the clipboard
 - **CSV export** — export per-client time data with a UTF-8 BOM so it opens correctly in Excel and Numbers
 
 ## Requirements
@@ -21,14 +22,22 @@ Track work by client and topic throughout the day, review daily and weekly summa
 
 ```bash
 npm install
-node --experimental-strip-types server/index.ts   # terminal 1 — start backend
-npm run dev                                        # terminal 2 — start frontend
+npm start        # starts backend + frontend together
 ```
 
 Then open [http://localhost:5173](http://localhost:5173).
 
 The SQLite database is created automatically on first run at `data/time-reporter.sqlite`.
 No `.env.local` is needed — the Vite dev server proxies API requests to the backend automatically.
+
+## Demo mode
+
+To explore the app with pre-seeded fictional data:
+
+```bash
+npm run seed:demo    # create data/demo.sqlite with 3 clients (~4 weeks of data)
+npm run start:demo   # start against the demo database
+```
 
 ---
 

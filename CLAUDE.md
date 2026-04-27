@@ -5,7 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Start frontend dev server (Vite, port 5173 with proxy to :3001)
+npm start            # Start backend + frontend together (concurrently)
+npm run start:demo   # Same, but uses data/demo.sqlite
+npm run seed:demo    # Populate data/demo.sqlite with 3 fictional clients (~4 weeks of data)
+npm run dev          # Frontend dev server only (Vite, port 5173 with proxy to :3001)
 npm run test         # Run tests once (Vitest)
 ```
 
@@ -14,10 +17,13 @@ Run a single test file:
 npx vitest run src/lib/timeUtils.test.ts
 ```
 
-The backend server is a separate process (not managed by Vite scripts):
+Start backend alone (if not using `npm start`):
 ```bash
 node --experimental-strip-types server/index.ts
 ```
+
+The `TIME_REPORTER_DB` environment variable controls which SQLite file the backend uses.
+Defaults to `data/time-reporter.sqlite`.
 
 ## Architecture
 
@@ -38,7 +44,7 @@ This is a React + TypeScript SPA built with Vite, backed by an Express + SQLite 
 
 **Storage:**
 - Backend (`server/`): SQLite via `better-sqlite3`. Schema has `clients`, `tasks`, `intervals`, `daily_overrides`, and `meta` tables. The server exposes `GET /api/state`, `PUT /api/state`, `GET /api/clients`, `POST /api/clients`, and `PUT /api/clients/:id`.
-- Frontend uses `VITE_API_URL` (set to `http://localhost:3001` in `.env.local`) to talk to the backend. Falls back to `localStorage` when unset (test environment only).
+- Frontend proxies `/api/*` to `http://localhost:3001` via the Vite dev server — no `.env.local` needed. `VITE_API_URL` can override this for non-proxy deployments.
 
 **Tests:** Vitest with jsdom for frontend, Node environment for backend. Test files colocated as `*.test.ts(x)`. `server/db.test.ts` covers the database layer; `src/lib/` tests cover time calculations and CSV export.
 
