@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "start": "concurrently -n be,fe -c cyan,green \"node --experimental-strip-types server/index.ts\" \"vite\"",
-    "start:demo": "concurrently -n be,fe -c cyan,green \"TIME_REPORTER_DB=data/demo.sqlite node --experimental-strip-types server/index.ts\" \"vite\"",
+    "start:demo": "node --experimental-strip-types scripts/check-port.ts && concurrently -n be,fe -c cyan,green \"TIME_REPORTER_DB=data/demo.sqlite node --experimental-strip-types server/index.ts\" \"vite\"",
+    "stop": "pkill -f 'server/index.ts' || true",
     "seed:demo": "node --experimental-strip-types scripts/seed-demo.ts"
   },
   "dependencies": {

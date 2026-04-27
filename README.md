@@ -36,8 +36,12 @@ To explore the app with pre-seeded fictional data:
 
 ```bash
 npm run seed:demo    # create data/demo.sqlite with 3 clients (~4 weeks of data)
+npm run stop         # stop any running backend first
 npm run start:demo   # start against the demo database
 ```
+
+`start:demo` will refuse to start if port 3001 is already occupied, so production
+and demo data can never be served at the same time.
 
 ---
 
