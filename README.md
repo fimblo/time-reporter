@@ -4,6 +4,13 @@ A lightweight time tracking app for freelancers and consultants who bill multipl
 
 Track work by client and topic throughout the day, review daily and weekly summaries, and export to CSV for invoicing. Time is stored locally in SQLite — no cloud account required.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Tracking page — start and stop timers per task](docs/assets/tt-tracking-page.png) | ![Overview page — bar chart and full history with edit/delete](docs/assets/tt-overview-page.png) |
+| ![Report page — drag tasks into groups, copy summary](docs/assets/tt-report-page.png) | ![Manage clients — add and configure clients](docs/assets/tt-manage-clients.png) |
+
 ## Features
 
 - **Client-focused** — switch between clients with a tab; each client has its own colour and history
