@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "start": "concurrently -n be,fe -c cyan,green \"node --experimental-strip-types server/index.ts\" \"vite\"",
+    "start:demo": "concurrently -n be,fe -c cyan,green \"TIME_REPORTER_DB=data/demo.sqlite node --experimental-strip-types server/index.ts\" \"vite\"",
+    "seed:demo": "node --experimental-strip-types scripts/seed-demo.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.9.0",
@@ -30,6 +33,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/coverage-v8": "^4.0.18",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

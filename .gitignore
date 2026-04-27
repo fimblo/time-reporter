@@ -17,6 +17,7 @@ dist-ssr
 
 # Migration artefacts and local data
 tmp/
+data/
 
 # Editor directories and files
 .vscode/*
