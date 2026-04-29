@@ -972,6 +972,66 @@ input[type="number"] { width: 72px; }
   width: 1.2rem;
 }
 
+/* Clickable group name inside the header row */
+.report-group-name-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.report-group-name-btn:hover {
+  color: var(--text);
+  text-decoration: underline dotted;
+}
+
+/* Group naming modal — text input */
+.group-name-input {
+  width: 100%;
+  background: #282828;
+  border: 1px solid #665c54;
+  border-radius: var(--r);
+  color: var(--text);
+  font-size: 0.9rem;
+  padding: 0.45rem 0.6rem;
+}
+.group-name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Group naming modal — suggestion list */
+.group-name-suggestions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.group-name-suggestion {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.35rem 0.5rem;
+  color: var(--text-2);
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: var(--r);
+}
+.group-name-suggestion:hover {
+  background: #504945;
+  color: var(--text);
+}
+
 /* Grand total row */
 .report-grand-total td {
   font-weight: 700;

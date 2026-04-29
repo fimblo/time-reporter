@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { DailySummaryRow } from '../types'
 import { addDays, dateKeyFromDate, formatMinutesAsHoursMinutes, getMondayOfWeek } from '../lib/timeUtils'
 
@@ -20,7 +20,19 @@ function rowKey(row: DailySummaryRow): string {
   return `${row.taskId}||${row.date}`
 }
 
-const GROUPS_KEY = 'report-groups'
+/** Subsequence match: every char in query appears in order (not necessarily adjacent) in text. */
+function fuzzyMatch(query: string, text: string): boolean {
+  const q = query.toLowerCase()
+  const t = text.toLowerCase()
+  let qi = 0
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) qi++
+  }
+  return qi === q.length
+}
+
+const GROUPS_KEY      = 'report-groups'
+const GROUP_NAMES_KEY = 'report-group-names'
 
 function loadGroups(): Map<string, string> {
   try {
@@ -36,16 +48,34 @@ function saveGroups(groups: Map<string, string>): void {
   localStorage.setItem(GROUPS_KEY, JSON.stringify([...groups.entries()]))
 }
 
+function loadGroupNames(): Map<string, string> {
+  try {
+    const raw = localStorage.getItem(GROUP_NAMES_KEY)
+    if (!raw) return new Map()
+    return new Map(JSON.parse(raw) as [string, string][])
+  } catch {
+    return new Map()
+  }
+}
+
+function saveGroupNames(names: Map<string, string>): void {
+  localStorage.setItem(GROUP_NAMES_KEY, JSON.stringify([...names.entries()]))
+}
+
 export function ReportView({ rows, now }: ReportViewProps) {
   const [weekOffset, setWeekOffset] = useState(-1)
   // rowKey → groupId
   const [groups, setGroups] = useState<Map<string, string>>(loadGroups)
+  const [groupNames, setGroupNames] = useState<Map<string, string>>(loadGroupNames)
   const [draggingKey, setDraggingKey] = useState<string | null>(null)
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const [namingGroupId, setNamingGroupId] = useState<string | null>(null)
+  const [nameInput, setNameInput] = useState('')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => { saveGroups(groups) }, [groups])
-  const [copied, setCopied] = useState(false)
+  useEffect(() => { saveGroupNames(groupNames) }, [groupNames])
 
   const todayKey = dateKeyFromDate(now)
   const currentMonday = getMondayOfWeek(todayKey)
@@ -67,21 +97,59 @@ export function ReportView({ rows, now }: ReportViewProps) {
   const ungroupedRows = weekRows.filter((r) => !groups.has(rowKey(r)))
   const grandTotal = weekRows.reduce((s, r) => s + r.minutes, 0)
 
+  // All unique topics for this client, sorted by frequency across all time
+  const allTopics = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const row of rows) {
+      counts.set(row.topic, (counts.get(row.topic) ?? 0) + 1)
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([topic]) => topic)
+  }, [rows])
+
+  const suggestions = nameInput.trim()
+    ? allTopics.filter((t) => fuzzyMatch(nameInput, t)).slice(0, 10)
+    : allTopics.slice(0, 10)
+
+  function openNaming(gid: string) {
+    setNamingGroupId(gid)
+    setNameInput(groupNames.get(gid) ?? '')
+  }
+
+  function applyName(name: string) {
+    if (!namingGroupId) return
+    setGroupNames((prev) => {
+      const next = new Map(prev)
+      if (name.trim()) next.set(namingGroupId, name.trim())
+      else next.delete(namingGroupId)
+      return next
+    })
+    setNamingGroupId(null)
+  }
+
+  function dissolveGroupName(gid: string) {
+    setGroupNames((prev) => {
+      if (!prev.has(gid)) return prev
+      const next = new Map(prev)
+      next.delete(gid)
+      return next
+    })
+  }
+
   function handleDrop(targetRow: DailySummaryRow) {
     if (!draggingKey) return
     const targetKey = rowKey(targetRow)
     if (draggingKey === targetKey) { setDraggingKey(null); setDragOverKey(null); return }
 
+    const sourceGroupId = groups.get(draggingKey)
+    const targetGroupId = groups.get(targetKey)
+    const joinGroupId = targetGroupId ?? `g${Date.now()}`
+
     setGroups((prev) => {
       const next = new Map(prev)
-      const sourceGroupId = prev.get(draggingKey)
-      const targetGroupId = prev.get(targetKey)
-      const joinGroupId = targetGroupId ?? `g${Date.now()}`
-
       if (!targetGroupId) next.set(targetKey, joinGroupId)
       next.set(draggingKey, joinGroupId)
-
-      // Dissolve old group if it now has ≤1 member
       if (sourceGroupId && sourceGroupId !== joinGroupId) {
         const remaining = [...next.entries()].filter(([, g]) => g === sourceGroupId)
         if (remaining.length <= 1) remaining.forEach(([k]) => next.delete(k))
@@ -89,28 +157,40 @@ export function ReportView({ rows, now }: ReportViewProps) {
       return next
     })
 
+    // Clean up name if the source group dissolved
+    if (sourceGroupId && sourceGroupId !== joinGroupId) {
+      const remainingAfter = [...groups.entries()].filter(([k, g]) => g === sourceGroupId && k !== draggingKey)
+      if (remainingAfter.length <= 1) dissolveGroupName(sourceGroupId)
+    }
+
     setDraggingKey(null)
     setDragOverKey(null)
   }
 
   function handleDetach(row: DailySummaryRow) {
     const key = rowKey(row)
+    const gid = groups.get(key)
+    if (!gid) return
+
     setGroups((prev) => {
-      const gid = prev.get(key)
-      if (!gid) return prev
       const next = new Map(prev)
       next.delete(key)
       const remaining = [...next.entries()].filter(([, g]) => g === gid)
       if (remaining.length <= 1) remaining.forEach(([k]) => next.delete(k))
       return next
     })
+
+    // Clean up name if group dissolved
+    const remainingAfter = [...groups.entries()].filter(([k, g]) => g === gid && k !== key)
+    if (remainingAfter.length <= 1) dissolveGroupName(gid)
   }
 
   function copyReport() {
     const lines: string[] = [`Week of ${weekLabel}`, '']
     groupIds.forEach((gid, i) => {
       const total = getGroupRows(gid).reduce((s, r) => s + r.minutes, 0)
-      if (total > 0) lines.push(`Group ${i + 1}   ${formatMinutesAsHoursMinutes(total)}`)
+      const label = groupNames.get(gid) ?? `Group ${i + 1}`
+      if (total > 0) lines.push(`${label}   ${formatMinutesAsHoursMinutes(total)}`)
     })
     lines.push('─'.repeat(20))
     lines.push(`Total      ${formatMinutesAsHoursMinutes(grandTotal)}`)
@@ -126,7 +206,7 @@ export function ReportView({ rows, now }: ReportViewProps) {
         key={key}
         className={[
           'report-row',
-          inGroup         ? 'report-row--grouped'   : '',
+          inGroup             ? 'report-row--grouped'   : '',
           draggingKey === key ? 'report-row--dragging'  : '',
           dragOverKey === key ? 'report-row--drag-over' : '',
         ].filter(Boolean).join(' ')}
@@ -185,11 +265,20 @@ export function ReportView({ rows, now }: ReportViewProps) {
                   collapsed ? next.delete(gid) : next.add(gid)
                   return next
                 })
+                const displayName = groupNames.get(gid) ?? `Group ${i + 1}`
                 return (
                   <Fragment key={gid}>
                     <tr className="report-group-header" onClick={toggle}>
                       <td className="report-group-toggle">{collapsed ? '▶' : '▼'}</td>
-                      <td colSpan={2}>Group {i + 1}</td>
+                      <td colSpan={2}>
+                        <button
+                          className="report-group-name-btn"
+                          onClick={(e) => { e.stopPropagation(); openNaming(gid) }}
+                          title="Rename group"
+                        >
+                          {displayName}
+                        </button>
+                      </td>
                       <td className="report-time">{formatMinutesAsHoursMinutes(groupTotal)}</td>
                       <td></td>
                     </tr>
@@ -215,6 +304,43 @@ export function ReportView({ rows, now }: ReportViewProps) {
             </div>
           )}
         </>
+      )}
+
+      {namingGroupId && (
+        <div className="modal-backdrop" onClick={() => setNamingGroupId(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Name this group</h3>
+            <div className="modal-body">
+              <input
+                className="group-name-input"
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') applyName(nameInput)
+                  if (e.key === 'Escape') setNamingGroupId(null)
+                }}
+                placeholder="Type a name or pick one below…"
+                autoFocus
+              />
+              {suggestions.length > 0 && (
+                <ul className="group-name-suggestions">
+                  {suggestions.map((t) => (
+                    <li key={t}>
+                      <button className="group-name-suggestion" onClick={() => applyName(t)}>
+                        {t}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setNamingGroupId(null)}>Cancel</button>
+              <button onClick={() => applyName(nameInput)}>Save</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
