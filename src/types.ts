@@ -45,3 +45,8 @@ export interface AppState {
   lastActiveTaskId?: UUID
 }
 
+export interface ReportGroupsData {
+  memberships: { groupId: string; taskId: string; date: string }[]
+  names: { groupId: string; name: string }[]
+}
+

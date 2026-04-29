@@ -1,6 +1,6 @@
 import cors from 'cors'
 import express, { type Request, type Response } from 'express'
-import { createClient, loadAppState, loadClients, saveAppState, updateClient } from './db.ts'
+import { createClient, loadAppState, loadClients, loadReportGroups, saveAppState, saveReportGroups, updateClient } from './db.ts'
 
 const PORT = Number.parseInt(process.env.PORT ?? '3001', 10)
 
@@ -57,6 +57,27 @@ app.get('/api/state', (_req: Request, res: Response) => {
 app.put('/api/state', (req: Request, res: Response) => {
   try {
     saveAppState(req.body)
+    res.status(204).end()
+  } catch (err) {
+    console.error(err)
+    res.status(400).json({ error: err instanceof Error ? err.message : 'Bad request' })
+  }
+})
+
+// ── Report groups ────────────────────────────────────────────────────────────
+
+app.get('/api/report-groups', (_req: Request, res: Response) => {
+  try {
+    res.json(loadReportGroups())
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Server error' })
+  }
+})
+
+app.put('/api/report-groups', (req: Request, res: Response) => {
+  try {
+    saveReportGroups(req.body)
     res.status(204).end()
   } catch (err) {
     console.error(err)

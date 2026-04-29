@@ -1,4 +1,4 @@
-import type { AppState, Client } from '../types'
+import type { AppState, Client, ReportGroupsData } from '../types'
 
 // Use VITE_API_URL when set explicitly (e.g. vite preview or a production deploy
 // pointing at a different host). In normal `npm run dev` use, leave it unset:
@@ -44,6 +44,21 @@ export async function saveState(state: AppState): Promise<void> {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(state),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`)
+}
+
+export async function loadReportGroups(): Promise<ReportGroupsData> {
+  const res = await fetch(`${BASE}/api/report-groups`)
+  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`)
+  return res.json() as Promise<ReportGroupsData>
+}
+
+export async function saveReportGroups(data: ReportGroupsData): Promise<void> {
+  const res = await fetch(`${BASE}/api/report-groups`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`)
 }

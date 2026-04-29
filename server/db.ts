@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import fs from 'node:fs'
 import path from 'node:path'
-import type { AppState, Client, DailyOverride, Interval, Task } from '../src/types.ts'
+import type { AppState, Client, DailyOverride, Interval, ReportGroupsData, Task } from '../src/types.ts'
 
 const DEFAULT_RELATIVE_DB = path.join('data', 'time-reporter.sqlite')
 
@@ -74,6 +74,18 @@ function migrate(db: Database.Database): void {
     CREATE TABLE IF NOT EXISTS meta (
       key TEXT PRIMARY KEY NOT NULL,
       value TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS report_groups (
+      group_id TEXT NOT NULL,
+      task_id  TEXT NOT NULL,
+      date     TEXT NOT NULL,
+      PRIMARY KEY (task_id, date)
+    );
+
+    CREATE TABLE IF NOT EXISTS report_group_names (
+      group_id TEXT PRIMARY KEY NOT NULL,
+      name     TEXT NOT NULL
     );
   `)
 }
@@ -284,4 +296,38 @@ export function saveAppState(state: unknown): void {
     }
   })
   run()
+}
+
+// ── Report groups ─────────────────────────────────────────────────────────────
+
+export function loadReportGroups(): ReportGroupsData {
+  const db = getDb()
+  const memberRows = db.prepare('SELECT group_id, task_id, date FROM report_groups').all() as {
+    group_id: string; task_id: string; date: string
+  }[]
+  const nameRows = db.prepare('SELECT group_id, name FROM report_group_names').all() as {
+    group_id: string; name: string
+  }[]
+  return {
+    memberships: memberRows.map((r) => ({ groupId: r.group_id, taskId: r.task_id, date: r.date })),
+    names: nameRows.map((r) => ({ groupId: r.group_id, name: r.name })),
+  }
+}
+
+export function saveReportGroups(data: unknown): void {
+  if (data === null || typeof data !== 'object') throw new Error('Invalid body')
+  const o = data as Record<string, unknown>
+  if (!Array.isArray(o.memberships)) throw new Error('memberships must be an array')
+  if (!Array.isArray(o.names)) throw new Error('names must be an array')
+  const typed = data as ReportGroupsData
+
+  const db = getDb()
+  const insertMember = db.prepare('INSERT INTO report_groups (group_id, task_id, date) VALUES (?, ?, ?)')
+  const insertName = db.prepare('INSERT INTO report_group_names (group_id, name) VALUES (?, ?)')
+  db.transaction(() => {
+    db.prepare('DELETE FROM report_groups').run()
+    db.prepare('DELETE FROM report_group_names').run()
+    for (const m of typed.memberships) insertMember.run(m.groupId, m.taskId, m.date)
+    for (const n of typed.names) insertName.run(n.groupId, n.name)
+  })()
 }

@@ -1,6 +1,7 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import type { DailySummaryRow } from '../types'
 import { addDays, dateKeyFromDate, formatMinutesAsHoursMinutes, getMondayOfWeek } from '../lib/timeUtils'
+import { loadReportGroups, saveReportGroups } from '../lib/storage'
 
 interface ReportViewProps {
   rows: DailySummaryRow[]
@@ -31,42 +32,11 @@ function fuzzyMatch(query: string, text: string): boolean {
   return qi === q.length
 }
 
-const GROUPS_KEY      = 'report-groups'
-const GROUP_NAMES_KEY = 'report-group-names'
-
-function loadGroups(): Map<string, string> {
-  try {
-    const raw = localStorage.getItem(GROUPS_KEY)
-    if (!raw) return new Map()
-    return new Map(JSON.parse(raw) as [string, string][])
-  } catch {
-    return new Map()
-  }
-}
-
-function saveGroups(groups: Map<string, string>): void {
-  localStorage.setItem(GROUPS_KEY, JSON.stringify([...groups.entries()]))
-}
-
-function loadGroupNames(): Map<string, string> {
-  try {
-    const raw = localStorage.getItem(GROUP_NAMES_KEY)
-    if (!raw) return new Map()
-    return new Map(JSON.parse(raw) as [string, string][])
-  } catch {
-    return new Map()
-  }
-}
-
-function saveGroupNames(names: Map<string, string>): void {
-  localStorage.setItem(GROUP_NAMES_KEY, JSON.stringify([...names.entries()]))
-}
-
 export function ReportView({ rows, now }: ReportViewProps) {
   const [weekOffset, setWeekOffset] = useState(-1)
   // rowKey → groupId
-  const [groups, setGroups] = useState<Map<string, string>>(loadGroups)
-  const [groupNames, setGroupNames] = useState<Map<string, string>>(loadGroupNames)
+  const [groups, setGroups] = useState<Map<string, string>>(new Map())
+  const [groupNames, setGroupNames] = useState<Map<string, string>>(new Map())
   const [draggingKey, setDraggingKey] = useState<string | null>(null)
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
@@ -74,8 +44,28 @@ export function ReportView({ rows, now }: ReportViewProps) {
   const [nameInput, setNameInput] = useState('')
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => { saveGroups(groups) }, [groups])
-  useEffect(() => { saveGroupNames(groupNames) }, [groupNames])
+  // Prevent saving before initial load completes
+  const persistReady = useRef(false)
+
+  useEffect(() => {
+    loadReportGroups()
+      .then(({ memberships, names }) => {
+        setGroups(new Map(memberships.map((m) => [`${m.taskId}||${m.date}`, m.groupId])))
+        setGroupNames(new Map(names.map((n) => [n.groupId, n.name])))
+        persistReady.current = true
+      })
+      .catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    if (!persistReady.current) return
+    const memberships = [...groups.entries()].map(([key, groupId]) => {
+      const sep = key.indexOf('||')
+      return { groupId, taskId: key.slice(0, sep), date: key.slice(sep + 2) }
+    })
+    const names = [...groupNames.entries()].map(([groupId, name]) => ({ groupId, name }))
+    saveReportGroups({ memberships, names }).catch(console.error)
+  }, [groups, groupNames])
 
   const todayKey = dateKeyFromDate(now)
   const currentMonday = getMondayOfWeek(todayKey)
@@ -157,7 +147,6 @@ export function ReportView({ rows, now }: ReportViewProps) {
       return next
     })
 
-    // Clean up name if the source group dissolved
     if (sourceGroupId && sourceGroupId !== joinGroupId) {
       const remainingAfter = [...groups.entries()].filter(([k, g]) => g === sourceGroupId && k !== draggingKey)
       if (remainingAfter.length <= 1) dissolveGroupName(sourceGroupId)
@@ -180,7 +169,6 @@ export function ReportView({ rows, now }: ReportViewProps) {
       return next
     })
 
-    // Clean up name if group dissolved
     const remainingAfter = [...groups.entries()].filter(([k, g]) => g === gid && k !== key)
     if (remainingAfter.length <= 1) dissolveGroupName(gid)
   }

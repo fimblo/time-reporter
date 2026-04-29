@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { closeDb, createClient, loadAppState, loadClients, saveAppState, updateClient } from './db.ts'
+import { closeDb, createClient, loadAppState, loadClients, loadReportGroups, saveAppState, saveReportGroups, updateClient } from './db.ts'
 
 let tmpDir: string
 
@@ -258,5 +258,66 @@ describe('app state', () => {
     const loaded = loadAppState()
     expect(loaded.tasks[0].client).toBe('Åsa & Öberg AB')
     expect(loaded.tasks[0].topic).toBe('Möte om hästar och väder')
+  })
+})
+
+describe('report groups', () => {
+  it('returns empty data when no groups exist', () => {
+    const data = loadReportGroups()
+    expect(data.memberships).toEqual([])
+    expect(data.names).toEqual([])
+  })
+
+  it('saves and reloads memberships', () => {
+    saveReportGroups({
+      memberships: [
+        { groupId: 'g1', taskId: 'task-a', date: '2026-04-21' },
+        { groupId: 'g1', taskId: 'task-b', date: '2026-04-22' },
+      ],
+      names: [],
+    })
+    const data = loadReportGroups()
+    expect(data.memberships).toHaveLength(2)
+    expect(data.memberships.every((m) => m.groupId === 'g1')).toBe(true)
+  })
+
+  it('saves and reloads group names', () => {
+    saveReportGroups({
+      memberships: [],
+      names: [{ groupId: 'g1', name: 'Deep work' }],
+    })
+    const data = loadReportGroups()
+    expect(data.names).toHaveLength(1)
+    expect(data.names[0]).toEqual({ groupId: 'g1', name: 'Deep work' })
+  })
+
+  it('replaces all data on every save', () => {
+    saveReportGroups({
+      memberships: [{ groupId: 'g1', taskId: 'task-a', date: '2026-04-21' }],
+      names: [{ groupId: 'g1', name: 'Old name' }],
+    })
+    saveReportGroups({
+      memberships: [{ groupId: 'g2', taskId: 'task-b', date: '2026-04-22' }],
+      names: [{ groupId: 'g2', name: 'New name' }],
+    })
+    const data = loadReportGroups()
+    expect(data.memberships).toHaveLength(1)
+    expect(data.memberships[0].groupId).toBe('g2')
+    expect(data.names[0].name).toBe('New name')
+  })
+
+  it('saves memberships with no associated name', () => {
+    saveReportGroups({
+      memberships: [{ groupId: 'g1', taskId: 'task-a', date: '2026-04-21' }],
+      names: [],
+    })
+    const data = loadReportGroups()
+    expect(data.memberships).toHaveLength(1)
+    expect(data.names).toHaveLength(0)
+  })
+
+  it('throws on invalid body', () => {
+    expect(() => saveReportGroups(null)).toThrow()
+    expect(() => saveReportGroups({ memberships: 'bad' })).toThrow()
   })
 })

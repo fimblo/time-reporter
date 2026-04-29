@@ -45,6 +45,7 @@ This is a React + TypeScript SPA built with Vite, backed by an Express + SQLite 
 **Storage:**
 - Backend (`server/`): SQLite via `better-sqlite3`. Schema has `clients`, `tasks`, `intervals`, `daily_overrides`, and `meta` tables. The server exposes `GET /api/state`, `PUT /api/state`, `GET /api/clients`, `POST /api/clients`, and `PUT /api/clients/:id`.
 - Frontend proxies `/api/*` to `http://localhost:3001` via the Vite dev server — no `.env.local` needed. `VITE_API_URL` can override this for non-proxy deployments.
+- The server exposes: `GET /api/state`, `PUT /api/state`, `GET /api/clients`, `POST /api/clients`, `PUT /api/clients/:id`, `GET /api/report-groups`, `PUT /api/report-groups`.
 
 **Tests:** Vitest with jsdom for frontend, Node environment for backend. Test files colocated as `*.test.ts(x)`. `server/db.test.ts` covers the database layer; `src/lib/` tests cover time calculations and CSV export.
 
