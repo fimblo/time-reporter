@@ -151,7 +151,9 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     stddev: Math.round(completedWeeks.reduce((s, w) => s + w.stddev, 0) / numWeeks),
   }
 
-  const totalMinutes = computeTotalMinutes(summaryRows)
+  const uninvoicedMinutes = computeTotalMinutes(
+    summaryRows.filter((r) => !selectedClient?.invoicedThrough || r.date > selectedClient.invoicedThrough),
+  )
   const maxBarMinutes = Math.max(thisWeek.total, lastWeek.total, avgWeek?.total ?? 0)
   const barMax = maxBarMinutes === 0 ? 1 : maxBarMinutes * 1.1
   const lastWeekBarPct = (lastWeek.total / barMax) * 100
@@ -321,8 +323,8 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               </div>
               <hr className="sidebar-divider" />
               <div className="sidebar-stat-group">
-                <div className="sidebar-stat-group-title">All time</div>
-                <div className="stat-value-only">{formatMinutesAsHoursMinutes(totalMinutes)}</div>
+                <div className="sidebar-stat-group-title">Uninvoiced</div>
+                <div className="stat-value-only">{formatMinutesAsHoursMinutes(uninvoicedMinutes)}</div>
               </div>
             </>
           )}
