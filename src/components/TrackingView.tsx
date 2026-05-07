@@ -152,7 +152,8 @@ export function TrackingView(props: TrackingViewProps) {
                 <li
                   key={task.id}
                   className={isActive ? 'task-row active' : 'task-row'}
-                  style={{ borderLeftColor: clientColor, borderLeftWidth: '4px' }}
+                  style={{ borderLeftColor: clientColor, borderLeftWidth: '4px', cursor: 'pointer' }}
+                  onClick={() => isActive ? onPauseTimer() : onStartTimer(task.id)}
                 >
                   <div className="task-main">
                     <div className="task-title">
@@ -164,7 +165,7 @@ export function TrackingView(props: TrackingViewProps) {
                         : `${formatMinutesAsHoursMinutes(minutesToday)} today`}
                     </div>
                   </div>
-                  <div className="task-actions">
+                  <div className="task-actions" onClick={(e) => e.stopPropagation()}>
                     {isActive ? (
                       <button onClick={onPauseTimer}>Pause</button>
                     ) : (
