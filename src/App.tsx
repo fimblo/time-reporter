@@ -129,8 +129,6 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     avg: computeDailyAverageMinutes(lastWeekRows),
     stddev: computeStdDevMinutes(lastWeekRows),
   }
-  const todayMinutes = computeTotalMinutes(summaryRows.filter((r) => r.date === todayKey))
-
   const completedWeekMap = new Map<string, typeof summaryRows>()
   for (const row of summaryRows) {
     const monday = getMondayOfWeek(row.date)
@@ -297,11 +295,6 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
         <div className="sidebar-footer">
           {selectedClient && !showClients && (
             <>
-              <div className="sidebar-stat-group">
-                <div className="sidebar-stat-group-title">Today</div>
-                <div className="stat-value-only">{formatMinutesAsHoursMinutes(todayMinutes)}</div>
-              </div>
-              <hr className="sidebar-divider" />
               <div className="sidebar-stat-group">
                 <div className="sidebar-stat-group-title">Weekly</div>
                 {maxBarMinutes > 0 && (

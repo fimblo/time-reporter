@@ -502,10 +502,16 @@ input[type="number"] { width: 72px; }
   border-bottom: 1px solid var(--border);
   margin-bottom: 0.9rem;
 }
+.panel-header h2,
 .panel-header h3 {
   margin: 0;
   padding: 0;
   border: none;
+}
+.today-total {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-2);
 }
 
 /* ─── New task form ──────────────────────────────────────────────────────── */

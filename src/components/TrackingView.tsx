@@ -59,6 +59,11 @@ export function TrackingView(props: TrackingViewProps) {
       .sort((a, b) => b.minutesToday - a.minutesToday)
   }, [tasks, today, now])
 
+  const todayTotalSeconds = useMemo(
+    () => tasks.reduce((s, t) => s + computeSecondsToday(t, today, now), 0),
+    [tasks, today, now],
+  )
+
   function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!topic.trim()) return
@@ -131,7 +136,12 @@ export function TrackingView(props: TrackingViewProps) {
       </section>
 
       <section className="panel">
-        <h2>Today&apos;s tasks</h2>
+        <div className="panel-header">
+          <h2>Today&apos;s tasks</h2>
+          {todayTotalSeconds > 0 && (
+            <span className="today-total">{formatSecondsAsHoursMinutesSeconds(todayTotalSeconds)}</span>
+          )}
+        </div>
         {tasksWithToday.length === 0 ? (
           <p className="empty">No time tracked yet today.</p>
         ) : (
