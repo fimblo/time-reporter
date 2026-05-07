@@ -494,6 +494,20 @@ input[type="number"] { width: 72px; }
   margin-bottom: 0.9rem;
 }
 
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.9rem;
+}
+.panel-header h3 {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
 /* ─── New task form ──────────────────────────────────────────────────────── */
 .new-task-form {
   display: grid;

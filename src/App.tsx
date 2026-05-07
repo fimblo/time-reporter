@@ -264,9 +264,6 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
                 </div>
               )
             })()}
-            <button className="btn-export" onClick={exportCsv} disabled={summaryRows.length === 0}>
-              Export CSV
-            </button>
           </>
         ) : (
           <span className="view-tabs-title">No client selected</span>
@@ -377,7 +374,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               onDeleteTask={handleDeleteTask}
             />
           ) : view === 'history' ? (
-            <HistoryView rows={summaryRows} tasks={clientTasks} now={now} onUpdateTask={handleUpdateTask} client={selectedClient} onSetInvoicedThrough={handleSetInvoicedThrough} />
+            <HistoryView rows={summaryRows} tasks={clientTasks} now={now} onUpdateTask={handleUpdateTask} client={selectedClient} onSetInvoicedThrough={handleSetInvoicedThrough} onExportCsv={exportCsv} />
           ) : (
             <ReflectView rows={summaryRows} now={now} />
           )}

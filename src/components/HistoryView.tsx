@@ -18,6 +18,7 @@ interface HistoryViewProps {
   onUpdateTask: (task: Task) => void
   client: Client | null
   onSetInvoicedThrough: (date: string | null) => void
+  onExportCsv: () => void
 }
 
 interface EditState {
@@ -29,7 +30,7 @@ interface EditState {
 }
 
 
-export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, onSetInvoicedThrough }: HistoryViewProps) {
+export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, onSetInvoicedThrough, onExportCsv }: HistoryViewProps) {
   const [editing, setEditing] = useState<EditState | null>(null)
 
   // Filter out 0-minute entries (deleted/zeroed rows)
@@ -200,7 +201,12 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
       </section>
 
       <section className="panel">
-        <h3>Details</h3>
+        <div className="panel-header">
+          <h3>Details</h3>
+          <button className="btn-export" onClick={onExportCsv} disabled={rows.length === 0}>
+            Export CSV
+          </button>
+        </div>
         {rows.length === 0 ? (
           <p className="empty">No entries.</p>
         ) : (
