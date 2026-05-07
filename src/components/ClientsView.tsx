@@ -39,9 +39,10 @@ interface ClientsViewProps {
   clients: Client[]
   onRefresh: () => Promise<void>
   onClientCreated?: (client: Client) => void
+  onClientRenamed?: (oldName: string, newName: string) => void
 }
 
-export function ClientsView({ clients, onRefresh, onClientCreated }: ClientsViewProps) {
+export function ClientsView({ clients, onRefresh, onClientCreated, onClientRenamed }: ClientsViewProps) {
   const [newName, setNewName] = useState('')
   const [newColor, setNewColor] = useState(COLOR_PALETTE[0])
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -65,7 +66,9 @@ export function ClientsView({ clients, onRefresh, onClientCreated }: ClientsView
   }
 
   async function saveEdit(client: Client) {
-    await updateClientApi(client.id, { name: editName.trim() || client.name, color: editColor })
+    const newName = editName.trim() || client.name
+    if (newName !== client.name) onClientRenamed?.(client.name, newName)
+    await updateClientApi(client.id, { name: newName, color: editColor })
     await onRefresh()
     setEditingId(null)
   }

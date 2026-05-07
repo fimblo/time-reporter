@@ -71,6 +71,13 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     return fetched
   }
 
+  function handleClientRenamed(oldName: string, newName: string) {
+    engine.updateState((prev) => ({
+      ...prev,
+      tasks: prev.tasks.map((t) => t.client === oldName ? { ...t, client: newName } : t),
+    }))
+  }
+
   // Initial client fetch
   useEffect(() => {
     refreshClients().then((fetched) => {
@@ -329,6 +336,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               clients={clients}
               onRefresh={refreshClients}
               onClientCreated={handleClientCreated}
+              onClientRenamed={handleClientRenamed}
             />
           ) : !selectedClient ? (
             <p className="empty" style={{ padding: '1rem' }}>
