@@ -1,20 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import type { DailySummaryRow } from '../types'
-import { addDays, dateKeyFromDate, formatMinutesAsHoursMinutes, getMondayOfWeek } from '../lib/timeUtils'
+import { addDays, dateKeyFromDate, formatMinutesAsHoursMinutes, formatWeekLabel, getMondayOfWeek } from '../lib/timeUtils'
 import { loadReportGroups, saveReportGroups } from '../lib/storage'
 
 interface ReflectViewProps {
   rows: DailySummaryRow[]
   now: Date
-}
-
-function formatWeekLabel(mondayStr: string): string {
-  const [y, m, d] = mondayStr.split('-').map(Number)
-  const monday = new Date(y, m - 1, d)
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  const fmt = (dt: Date) => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  return `${fmt(monday)} – ${fmt(sunday)}, ${y}`
 }
 
 function rowKey(row: DailySummaryRow): string {

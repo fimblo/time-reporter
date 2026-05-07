@@ -1,5 +1,14 @@
 import type { AppState, DailySummaryRow, Interval, Task, UUID } from '../types'
 
+export function formatWeekLabel(mondayStr: string): string {
+  const [y, m, d] = mondayStr.split('-').map(Number)
+  const monday = new Date(y, m - 1, d)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  const fmt = (dt: Date) => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return `${fmt(monday)} – ${fmt(sunday)}, ${y}`
+}
+
 export function nowIso(): string {
   return new Date().toISOString()
 }
