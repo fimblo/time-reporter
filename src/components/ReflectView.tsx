@@ -44,7 +44,6 @@ export function ReflectView({ rows, now }: ReflectViewProps) {
   const [nameInput, setNameInput] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const suggestionRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const [copied, setCopied] = useState(false)
 
   // Prevent saving before initial load completes
   const persistReady = useRef(false)
@@ -197,20 +196,6 @@ export function ReflectView({ rows, now }: ReflectViewProps) {
     if (remainingAfter.length <= 1) dissolveGroupName(gid)
   }
 
-  function copyReport() {
-    const lines: string[] = [`Week of ${weekLabel}`, '']
-    groupIds.forEach((gid, i) => {
-      const total = getGroupRows(gid).reduce((s, r) => s + r.minutes, 0)
-      const label = groupNames.get(gid) ?? `Group ${i + 1}`
-      if (total > 0) lines.push(`${label}   ${formatMinutesAsHoursMinutes(total)}`)
-    })
-    lines.push('─'.repeat(20))
-    lines.push(`Total      ${formatMinutesAsHoursMinutes(grandTotal)}`)
-    navigator.clipboard.writeText(lines.join('\n'))
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   function renderRow(row: DailySummaryRow, inGroup: boolean) {
     const key = rowKey(row)
     return (
@@ -308,13 +293,6 @@ export function ReflectView({ rows, now }: ReflectViewProps) {
             </tbody>
           </table>
 
-          {groupIds.length > 0 && (
-            <div>
-              <button className="btn-copy-report" onClick={copyReport}>
-                {copied ? 'Copied!' : 'Copy report'}
-              </button>
-            </div>
-          )}
         </>
       )}
 
