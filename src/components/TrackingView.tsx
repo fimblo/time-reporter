@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import type { Task } from '../types'
 import {
+  computeSecondsToday,
+  dateKeyFromDate,
   formatMinutesAsHoursMinutes,
   formatSecondsAsHoursMinutesSeconds,
-  computeSecondsToday,
   splitIntervalByDay,
 } from '../lib/timeUtils'
 
@@ -23,10 +24,6 @@ interface EditableTask extends Task {
   localTopic: string
 }
 
-function dateKeyFromDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 function yesterdayKey(): string {
   const d = new Date()
   d.setDate(d.getDate() - 1)
@@ -37,13 +34,6 @@ function computeMinutesToday(task: Task, todayKey: string, now: Date): number {
   return Math.floor(computeSecondsToday(task, todayKey, now) / 60)
 }
 
-function todayKey(now: Date): string {
-  const year = now.getFullYear()
-  const month = `${now.getMonth() + 1}`.padStart(2, '0')
-  const day = `${now.getDate()}`.padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 export function TrackingView(props: TrackingViewProps) {
   const { tasks, now, activeTaskId, clientColor, onCreateTask, onStartTimer, onPauseTimer, onUpdateTask, onDeleteTask } =
     props
@@ -52,7 +42,7 @@ export function TrackingView(props: TrackingViewProps) {
   const [editingTask, setEditingTask] = useState<EditableTask | null>(null)
   const [newDateInput, setNewDateInput] = useState(yesterdayKey)
 
-  const today = todayKey(now)
+  const today = dateKeyFromDate(now)
 
   const tasksWithToday = useMemo(() => {
     return tasks
