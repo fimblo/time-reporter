@@ -1027,7 +1027,8 @@ input[type="number"] { width: 72px; }
   cursor: pointer;
   border-radius: var(--r);
 }
-.group-name-suggestion:hover {
+.group-name-suggestion:hover,
+.group-name-suggestion.highlighted {
   background: #504945;
   color: var(--text);
 }

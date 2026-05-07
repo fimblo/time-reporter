@@ -42,6 +42,8 @@ export function ReportView({ rows, now }: ReportViewProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const [namingGroupId, setNamingGroupId] = useState<string | null>(null)
   const [nameInput, setNameInput] = useState('')
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const suggestionRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [copied, setCopied] = useState(false)
 
   // Prevent saving before initial load completes
@@ -98,13 +100,35 @@ export function ReportView({ rows, now }: ReportViewProps) {
       .map(([topic]) => topic)
   }, [rows])
 
-  const suggestions = nameInput.trim()
-    ? allTopics.filter((t) => fuzzyMatch(nameInput, t)).slice(0, 10)
-    : allTopics.slice(0, 10)
+  // Unique previously-used group names, most recently added last in Map order → reverse for recency
+  const pastGroupNames = useMemo(() => {
+    const seen = new Set<string>()
+    const result: string[] = []
+    for (const name of [...groupNames.values()].reverse()) {
+      if (!seen.has(name)) { seen.add(name); result.push(name) }
+    }
+    return result
+  }, [groupNames])
+
+  const suggestions = useMemo(() => {
+    const query = nameInput.trim()
+    const candidates = [
+      ...pastGroupNames,
+      ...allTopics.filter((t) => !pastGroupNames.includes(t)),
+    ]
+    return query
+      ? candidates.filter((t) => fuzzyMatch(query, t)).slice(0, 10)
+      : candidates.slice(0, 10)
+  }, [nameInput, pastGroupNames, allTopics])
+
+  useEffect(() => {
+    suggestionRefs.current[highlightedIndex]?.scrollIntoView({ block: 'nearest' })
+  }, [highlightedIndex])
 
   function openNaming(gid: string) {
     setNamingGroupId(gid)
     setNameInput(groupNames.get(gid) ?? '')
+    setHighlightedIndex(-1)
   }
 
   function applyName(name: string) {
@@ -303,19 +327,33 @@ export function ReportView({ rows, now }: ReportViewProps) {
                 className="group-name-input"
                 type="text"
                 value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
+                onChange={(e) => { setNameInput(e.target.value); setHighlightedIndex(-1) }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') applyName(nameInput)
-                  if (e.key === 'Escape') setNamingGroupId(null)
+                  if (e.key === 'ArrowDown' || (e.key === 'j' && !e.metaKey && !e.ctrlKey && !e.altKey)) {
+                    e.preventDefault()
+                    setHighlightedIndex((i) => Math.min(i + 1, suggestions.length - 1))
+                  } else if (e.key === 'ArrowUp' || (e.key === 'k' && !e.metaKey && !e.ctrlKey && !e.altKey)) {
+                    e.preventDefault()
+                    setHighlightedIndex((i) => Math.max(i - 1, -1))
+                  } else if (e.key === 'Enter') {
+                    applyName(highlightedIndex >= 0 ? suggestions[highlightedIndex] : nameInput)
+                  } else if (e.key === 'Escape') {
+                    setNamingGroupId(null)
+                  }
                 }}
                 placeholder="Type a name or pick one below…"
                 autoFocus
               />
               {suggestions.length > 0 && (
                 <ul className="group-name-suggestions">
-                  {suggestions.map((t) => (
+                  {suggestions.map((t, i) => (
                     <li key={t}>
-                      <button className="group-name-suggestion" onClick={() => applyName(t)}>
+                      <button
+                        className={`group-name-suggestion${i === highlightedIndex ? ' highlighted' : ''}`}
+                        ref={(el) => { suggestionRefs.current[i] = el }}
+                        onClick={() => applyName(t)}
+                        onMouseEnter={() => setHighlightedIndex(i)}
+                      >
                         {t}
                       </button>
                     </li>
