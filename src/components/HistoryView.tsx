@@ -38,6 +38,9 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
   const totalMinutes = computeTotalMinutes(rows)
   const activeDays = computeActiveDays(rows)
   const avgMinutes = computeDailyAverageMinutes(rows)
+  const uninvoicedMinutes = computeTotalMinutes(
+    rows.filter((r) => !client?.invoicedThrough || r.date > client.invoicedThrough),
+  )
 
   // Current week stats (Mon–today)
   const todayKey = dateKeyFromDate(now)
@@ -158,6 +161,10 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
   return (
     <div className="overview-view">
       <section className="panel stats">
+        <div className="stat-card stat-card--accent">
+          <div className="stat-label">Uninvoiced</div>
+          <div className="stat-value">{formatMinutesAsHoursMinutes(uninvoicedMinutes)}</div>
+        </div>
         <div className="stat-card">
           <div className="stat-label">Active days</div>
           <div className="stat-value">{activeDays}</div>
