@@ -173,7 +173,7 @@ export function TrackingView(props: TrackingViewProps) {
 
       {editingTask && (
         <div className="modal-backdrop">
-          <div className="modal">
+          <form className="modal" onSubmit={(e) => { e.preventDefault(); saveEdit() }}>
             <h3>Edit task</h3>
             <div className="modal-body">
               <label>
@@ -238,6 +238,14 @@ export function TrackingView(props: TrackingViewProps) {
                     value={newDateInput}
                     max={today}
                     onChange={(e) => setNewDateInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        if (newDateInput && !editableDates.includes(newDateInput)) {
+                          updateOverrideMinutes(newDateInput, 0)
+                        }
+                      }
+                    }}
                   />
                   <button
                     type="button"
@@ -254,10 +262,10 @@ export function TrackingView(props: TrackingViewProps) {
               </div>
             </div>
             <div className="modal-footer">
-              <button onClick={() => setEditingTask(null)}>Cancel</button>
-              <button onClick={saveEdit}>Save</button>
+              <button type="button" onClick={() => setEditingTask(null)}>Cancel</button>
+              <button type="submit">Save</button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>
