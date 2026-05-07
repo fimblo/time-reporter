@@ -75,7 +75,7 @@ export function ReportView({ rows, now }: ReportViewProps) {
 
   const weekRows = rows
     .filter((r) => r.date >= targetMonday && r.date <= targetSunday)
-    .sort((a, b) => a.date.localeCompare(b.date) || a.topic.localeCompare(b.topic))
+    .sort((a, b) => b.date.localeCompare(a.date) || a.topic.localeCompare(b.topic))
 
   // Group IDs in creation (Map insertion) order
   const groupIds = [...new Set(groups.values())]
