@@ -279,7 +279,7 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
 
       {editing && (
         <div className="modal-backdrop" onClick={() => setEditing(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); handleSave() }}>
             <h3>Edit entry</h3>
             <div className="modal-body">
               <label>
@@ -320,10 +320,10 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
               </label>
             </div>
             <div className="modal-footer">
-              <button onClick={() => setEditing(null)}>Cancel</button>
-              <button onClick={handleSave}>Save</button>
+              <button type="button" onClick={() => setEditing(null)}>Cancel</button>
+              <button type="submit">Save</button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

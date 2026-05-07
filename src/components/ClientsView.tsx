@@ -114,6 +114,10 @@ export function ClientsView({ clients, onRefresh, onClientCreated, onClientRenam
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       className="client-name-input"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveEdit(client)
+                        else if (e.key === 'Escape') setEditingId(null)
+                      }}
                     />
                     <div className="client-edit-actions">
                       <button onClick={() => saveEdit(client)}>Save</button>
