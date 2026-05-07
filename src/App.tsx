@@ -12,10 +12,12 @@ import {
   buildDailySummary,
   computeActiveDays,
   computeDailyAverageMinutes,
+  computeSecondsToday,
   computeStdDevMinutes,
   computeTotalMinutes,
   dateKeyFromDate,
   formatMinutesAsHoursMinutes,
+  formatSecondsAsHoursMinutesSeconds,
   getMondayOfWeek,
 } from './lib/timeUtils'
 import { buildCsvFromDailySummary } from './lib/csv'
@@ -255,6 +257,19 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               </button>
             </div>
             <div className="view-tabs-spacer" />
+            {engine.activeTaskId && (() => {
+              const activeTask = state.tasks.find((t) => t.id === engine.activeTaskId)
+              const activeClient = activeTask ? clients.find((c) => c.name === activeTask.client) : null
+              const secs = activeTask ? computeSecondsToday(activeTask, todayKey, now) : 0
+              return (
+                <div className="active-timer-indicator">
+                  <span className="active-timer-dot" style={{ background: activeClient?.color ?? 'var(--accent)' }} />
+                  <span className="active-timer-label">
+                    {activeTask?.topic ?? 'Timer running'} — {formatSecondsAsHoursMinutesSeconds(secs)}
+                  </span>
+                </div>
+              )
+            })()}
             <button className="btn-export" onClick={exportCsv} disabled={summaryRows.length === 0}>
               Export CSV
             </button>

@@ -321,6 +321,29 @@
 
 .view-tabs-spacer { flex: 1; }
 
+/* ─── Active timer indicator ─────────────────────────────────────────────── */
+.active-timer-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--text-2);
+  margin-right: 0.75rem;
+}
+
+.active-timer-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: timer-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
 /* ─── Main content ───────────────────────────────────────────────────────── */
 .main-content {
   flex: 1;
