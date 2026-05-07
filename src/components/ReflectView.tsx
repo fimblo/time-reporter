@@ -3,7 +3,7 @@ import type { DailySummaryRow } from '../types'
 import { addDays, dateKeyFromDate, formatMinutesAsHoursMinutes, getMondayOfWeek } from '../lib/timeUtils'
 import { loadReportGroups, saveReportGroups } from '../lib/storage'
 
-interface ReportViewProps {
+interface ReflectViewProps {
   rows: DailySummaryRow[]
   now: Date
 }
@@ -32,7 +32,7 @@ function fuzzyMatch(query: string, text: string): boolean {
   return qi === q.length
 }
 
-export function ReportView({ rows, now }: ReportViewProps) {
+export function ReflectView({ rows, now }: ReflectViewProps) {
   const [weekOffset, setWeekOffset] = useState(-1)
   // rowKey → groupId
   const [groups, setGroups] = useState<Map<string, string>>(new Map())

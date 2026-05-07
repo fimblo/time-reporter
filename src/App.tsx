@@ -1,8 +1,8 @@
 import './App.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TrackingView } from './components/TrackingView'
-import { OverviewView } from './components/OverviewView'
-import { ReportView } from './components/ReportView'
+import { HistoryView } from './components/HistoryView'
+import { ReflectView } from './components/ReflectView'
 import { ClientsView } from './components/ClientsView'
 import type { AppState, Client, Task } from './types'
 import { loadState, saveState, loadClients, updateClientApi } from './lib/storage'
@@ -20,7 +20,7 @@ import {
 } from './lib/timeUtils'
 import { buildCsvFromDailySummary } from './lib/csv'
 
-type View = 'tracking' | 'overview' | 'report'
+type View = 'tracking' | 'history' | 'reflect'
 
 // Outer shell: handles async initial load
 function App() {
@@ -220,7 +220,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     ? 'Manage clients'
     : view === 'tracking'
     ? selectedClient?.name ?? 'Tracking'
-    : selectedClient?.name ?? 'Overview'
+    : selectedClient?.name ?? 'History'
 
   const accentColor = selectedClient?.color ?? '#6366f1'
 
@@ -242,16 +242,16 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
                 Tracking
               </button>
               <button
-                className={`view-tab${view === 'overview' ? ' active' : ''}`}
-                onClick={() => setView('overview')}
+                className={`view-tab${view === 'history' ? ' active' : ''}`}
+                onClick={() => setView('history')}
               >
-                Overview
+                History
               </button>
               <button
-                className={`view-tab${view === 'report' ? ' active' : ''}`}
-                onClick={() => setView('report')}
+                className={`view-tab${view === 'reflect' ? ' active' : ''}`}
+                onClick={() => setView('reflect')}
               >
-                Report
+                Reflect
               </button>
             </div>
             <div className="view-tabs-spacer" />
@@ -360,10 +360,10 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
             />
-          ) : view === 'overview' ? (
-            <OverviewView rows={summaryRows} tasks={clientTasks} now={now} onUpdateTask={handleUpdateTask} client={selectedClient} onSetInvoicedThrough={handleSetInvoicedThrough} />
+          ) : view === 'history' ? (
+            <HistoryView rows={summaryRows} tasks={clientTasks} now={now} onUpdateTask={handleUpdateTask} client={selectedClient} onSetInvoicedThrough={handleSetInvoicedThrough} />
           ) : (
-            <ReportView rows={summaryRows} now={now} />
+            <ReflectView rows={summaryRows} now={now} />
           )}
         </section>
       </main>

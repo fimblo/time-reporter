@@ -10,7 +10,7 @@ import {
   getMondayOfWeek,
 } from '../lib/timeUtils'
 
-interface OverviewViewProps {
+interface HistoryViewProps {
   rows: DailySummaryRow[]
   tasks: Task[]
   now: Date
@@ -36,7 +36,7 @@ function formatWeekLabel(mondayStr: string): string {
   return `${fmt(monday)} – ${fmt(sunday)}, ${y}`
 }
 
-export function OverviewView({ rows: allRows, tasks, now, onUpdateTask, client, onSetInvoicedThrough }: OverviewViewProps) {
+export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, onSetInvoicedThrough }: HistoryViewProps) {
   const [editing, setEditing] = useState<EditState | null>(null)
 
   // Filter out 0-minute entries (deleted/zeroed rows)
