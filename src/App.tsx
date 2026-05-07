@@ -5,7 +5,7 @@ import { OverviewView } from './components/OverviewView'
 import { ReportView } from './components/ReportView'
 import { ClientsView } from './components/ClientsView'
 import type { AppState, Client, Task } from './types'
-import { loadState, saveState, loadClients } from './lib/storage'
+import { loadState, saveState, loadClients, updateClientApi } from './lib/storage'
 import { useTimerEngine } from './hooks/useTimerEngine'
 import {
   addDays,
@@ -189,6 +189,12 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     }))
   }
 
+  async function handleSetInvoicedThrough(date: string | null) {
+    if (!selectedClient) return
+    await updateClientApi(selectedClient.id, { invoicedThrough: date })
+    await refreshClients()
+  }
+
   function handleDeleteTask(taskId: string) {
     engine.updateState((prev) => ({
       ...prev,
@@ -345,7 +351,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               onDeleteTask={handleDeleteTask}
             />
           ) : view === 'overview' ? (
-            <OverviewView rows={summaryRows} tasks={clientTasks} now={now} onUpdateTask={handleUpdateTask} />
+            <OverviewView rows={summaryRows} tasks={clientTasks} now={now} onUpdateTask={handleUpdateTask} client={selectedClient} onSetInvoicedThrough={handleSetInvoicedThrough} />
           ) : (
             <ReportView rows={summaryRows} now={now} />
           )}

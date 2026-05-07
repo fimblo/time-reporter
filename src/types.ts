@@ -5,6 +5,7 @@ export interface Client {
   name: string
   color: string
   visibleInTabs: boolean
+  invoicedThrough?: string // YYYY-MM-DD, cumulative: this date and all earlier are invoiced
 }
 
 export interface Interval {

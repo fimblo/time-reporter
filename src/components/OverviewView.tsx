@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import type { DailySummaryRow, Task } from '../types'
+import type { Client, DailySummaryRow, Task } from '../types'
 import {
   addDays,
   computeActiveDays,
@@ -15,6 +15,8 @@ interface OverviewViewProps {
   tasks: Task[]
   now: Date
   onUpdateTask: (task: Task) => void
+  client: Client | null
+  onSetInvoicedThrough: (date: string | null) => void
 }
 
 interface EditState {
@@ -34,7 +36,7 @@ function formatWeekLabel(mondayStr: string): string {
   return `${fmt(monday)} – ${fmt(sunday)}, ${y}`
 }
 
-export function OverviewView({ rows: allRows, tasks, now, onUpdateTask }: OverviewViewProps) {
+export function OverviewView({ rows: allRows, tasks, now, onUpdateTask, client, onSetInvoicedThrough }: OverviewViewProps) {
   const [editing, setEditing] = useState<EditState | null>(null)
 
   // Filter out 0-minute entries (deleted/zeroed rows)
@@ -205,6 +207,7 @@ export function OverviewView({ rows: allRows, tasks, now, onUpdateTask }: Overvi
           <table className="detail-table">
             <thead>
               <tr>
+                <th className="invoice-col"></th>
                 <th>Date</th>
                 <th>Client</th>
                 <th>Topic</th>
@@ -213,30 +216,62 @@ export function OverviewView({ rows: allRows, tasks, now, onUpdateTask }: Overvi
               </tr>
             </thead>
             <tbody>
-              {weekKeys.map((monday) => {
-                const weekRows = weekMap.get(monday)!
-                const weekTotal = weekRows.reduce((s, r) => s + r.minutes, 0)
-                return (
-                <Fragment key={monday}>
-                  <tr className="week-header-row">
-                    <td colSpan={4}>{formatWeekLabel(monday)}</td>
-                    <td>{weekTotal} min ({formatMinutesAsHoursMinutes(weekTotal)})</td>
-                  </tr>
-                  {weekRows.map((row) => (
-                    <tr key={`${row.date}-${row.taskId}`} className="detail-row">
-                      <td>{row.date}</td>
-                      <td>{row.client || 'No client'}</td>
-                      <td>{row.topic || 'No topic'}</td>
-                      <td>{formatMinutesAsHoursMinutes(row.minutes)}</td>
-                      <td className="row-actions">
-                        <button className="btn-row-action" onClick={() => openEdit(row)}>Edit</button>
-                        <button className="btn-row-action btn-row-delete" onClick={() => handleDelete(row)}>Delete</button>
-                      </td>
+              {(() => {
+                const invoicedThrough = client?.invoicedThrough
+                let separatorInserted = false
+                return weekKeys.map((monday) => {
+                  const weekRows = weekMap.get(monday)!
+                  const weekTotal = weekRows.reduce((s, r) => s + r.minutes, 0)
+                  const items: React.ReactNode[] = []
+                  items.push(
+                    <tr key={`wh-${monday}`} className="week-header-row">
+                      <td></td>
+                      <td colSpan={4}>{formatWeekLabel(monday)}</td>
+                      <td>{weekTotal} min ({formatMinutesAsHoursMinutes(weekTotal)})</td>
                     </tr>
-                  ))}
-                </Fragment>
-                )
-              })}
+                  )
+                  for (const row of weekRows) {
+                    const isInvoiced = !!invoicedThrough && row.date <= invoicedThrough
+                    if (isInvoiced && !separatorInserted) {
+                      separatorInserted = true
+                      items.push(
+                        <tr key="invoice-separator" className="invoice-separator-row">
+                          <td colSpan={6}>invoiced</td>
+                        </tr>
+                      )
+                    }
+                    const isBoundary = row.date === invoicedThrough
+                    items.push(
+                      <tr key={`${row.date}-${row.taskId}`} className={`detail-row${isInvoiced ? ' detail-row--invoiced' : ''}`}>
+                        <td className="invoice-col">
+                          <input
+                            type="checkbox"
+                            className="invoice-checkbox"
+                            checked={isInvoiced}
+                            title={isInvoiced ? (isBoundary ? 'Click to unmark invoice boundary' : 'Invoiced') : 'Mark this and earlier as invoiced'}
+                            onChange={() => {
+                              if (isBoundary) {
+                                onSetInvoicedThrough(null)
+                              } else if (!isInvoiced) {
+                                onSetInvoicedThrough(row.date)
+                              }
+                            }}
+                          />
+                        </td>
+                        <td>{row.date}</td>
+                        <td>{row.client || 'No client'}</td>
+                        <td>{row.topic || 'No topic'}</td>
+                        <td>{formatMinutesAsHoursMinutes(row.minutes)}</td>
+                        <td className="row-actions">
+                          <button className="btn-row-action" onClick={() => openEdit(row)}>Edit</button>
+                          <button className="btn-row-action btn-row-delete" onClick={() => handleDelete(row)}>Delete</button>
+                        </td>
+                      </tr>
+                    )
+                  }
+                  return <Fragment key={monday}>{items}</Fragment>
+                })
+              })()}
             </tbody>
           </table>
         )}

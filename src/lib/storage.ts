@@ -29,7 +29,7 @@ export async function createClientApi(data: { name: string; color: string }): Pr
 
 export async function updateClientApi(
   id: string,
-  data: Partial<{ name: string; color: string; visibleInTabs: boolean }>,
+  data: Partial<{ name: string; color: string; visibleInTabs: boolean; invoicedThrough: string | null }>,
 ): Promise<void> {
   const res = await fetch(`${BASE}/api/clients/${id}`, {
     method: 'PUT',

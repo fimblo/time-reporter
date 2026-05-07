@@ -34,15 +34,16 @@ export function getDb(): Database.Database {
 }
 
 function migrate(db: Database.Database): void {
-  // Legacy: add set_at to older databases that predate this column
   try { db.exec('ALTER TABLE daily_overrides ADD COLUMN set_at TEXT') } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE clients ADD COLUMN invoiced_through TEXT') } catch { /* already exists */ }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS clients (
       id TEXT PRIMARY KEY NOT NULL,
       name TEXT NOT NULL UNIQUE,
       color TEXT NOT NULL DEFAULT '#6366f1',
-      visible_in_tabs INTEGER NOT NULL DEFAULT 1
+      visible_in_tabs INTEGER NOT NULL DEFAULT 1,
+      invoiced_through TEXT
     );
 
     CREATE TABLE IF NOT EXISTS tasks (
@@ -97,6 +98,7 @@ interface ClientRow {
   name: string
   color: string
   visible_in_tabs: number
+  invoiced_through: string | null
 }
 
 function rowToClient(row: ClientRow): Client {
@@ -105,6 +107,7 @@ function rowToClient(row: ClientRow): Client {
     name: row.name,
     color: row.color,
     visibleInTabs: row.visible_in_tabs === 1,
+    ...(row.invoiced_through ? { invoicedThrough: row.invoiced_through } : {}),
   }
 }
 
@@ -139,9 +142,12 @@ export function updateClient(id: string, body: unknown): void {
   const name = typeof o.name === 'string' ? o.name.trim() : existing.name
   const color = typeof o.color === 'string' ? o.color : existing.color
   const visibleInTabs = o.visibleInTabs === undefined ? existing.visible_in_tabs : (o.visibleInTabs ? 1 : 0)
+  const invoicedThrough = 'invoicedThrough' in o
+    ? (typeof o.invoicedThrough === 'string' ? o.invoicedThrough : null)
+    : existing.invoiced_through
   db.prepare(
-    'UPDATE clients SET name = ?, color = ?, visible_in_tabs = ? WHERE id = ?',
-  ).run(name, color, visibleInTabs, id)
+    'UPDATE clients SET name = ?, color = ?, visible_in_tabs = ?, invoiced_through = ? WHERE id = ?',
+  ).run(name, color, visibleInTabs, invoicedThrough, id)
 }
 
 // ── App state ────────────────────────────────────────────────────────────────

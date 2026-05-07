@@ -1071,3 +1071,36 @@ input[type="number"] { width: 72px; }
 }
 
 .btn-copy-report:hover:not(:disabled) { filter: brightness(1.12); }
+
+/* ─── Invoice tracking ───────────────────────────────────────────────────── */
+.invoice-col {
+  width: 1.5rem;
+  text-align: center;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.invoice-checkbox {
+  cursor: pointer;
+  accent-color: var(--accent);
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.detail-row--invoiced td {
+  color: var(--text-3);
+  opacity: 0.45;
+}
+
+.invoice-separator-row td {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0.25rem;
+  background: #1d2021;
+  border-top: 1px dashed var(--border);
+  border-bottom: 1px dashed var(--border);
+}
