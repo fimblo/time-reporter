@@ -244,12 +244,6 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
                 Tracking
               </button>
               <button
-                className={`view-tab${view === 'history' ? ' active' : ''}`}
-                onClick={() => setView('history')}
-              >
-                History
-              </button>
-              <button
                 className={`view-tab${view === 'reflect' ? ' active' : ''}`}
                 onClick={() => setView('reflect')}
               >
@@ -341,6 +335,13 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
                 <div className="sidebar-stat-group-title">Uninvoiced</div>
                 <div className="stat-value-only">{formatMinutesAsHoursMinutes(uninvoicedMinutes)}</div>
               </div>
+              <hr className="sidebar-divider" />
+              <button
+                className={`sidebar-history-link${view === 'history' ? ' active' : ''}`}
+                onClick={() => setView('history')}
+              >
+                History
+              </button>
             </>
           )}
         </div>

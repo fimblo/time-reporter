@@ -185,6 +185,23 @@
   margin: 0.1rem 0;
 }
 
+.sidebar-history-link {
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 0.78rem;
+  color: var(--text-3);
+  padding: 0.35rem 0.1rem;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+
+.sidebar-history-link:hover,
+.sidebar-history-link.active {
+  color: var(--text-2);
+}
+
 /* Week bar chart — dark sidebar */
 .week-bar-chart {
   display: flex;
