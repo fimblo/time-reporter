@@ -20,14 +20,13 @@
 
 API="http://localhost:3001/api"
 
-# Format total seconds as "Xh YYm" or "Ym YYs"
+# Format total seconds as "Xh YYm" or "Ym"
 format_secs() {
   local total=$1
   local h=$(( total / 3600 ))
   local m=$(( (total % 3600) / 60 ))
-  local s=$(( total % 60 ))
   if (( h > 0 )); then printf "%dh %02dm" "$h" "$m"
-  else             printf "%dm %02ds" "$m" "$s"
+  else             printf "%dm" "$m"
   fi
 }
 
