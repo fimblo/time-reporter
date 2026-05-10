@@ -24,7 +24,7 @@ function fuzzyMatch(query: string, text: string): boolean {
 }
 
 export function ReflectView({ rows, now }: ReflectViewProps) {
-  const [weekOffset, setWeekOffset] = useState(-1)
+  const [weekOffset, setWeekOffset] = useState(0)
   // rowKey → groupId
   const [groups, setGroups] = useState<Map<string, string>>(new Map())
   const [groupNames, setGroupNames] = useState<Map<string, string>>(new Map())
