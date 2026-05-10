@@ -49,12 +49,6 @@ export function ReflectView({ rows, now }: ReflectViewProps) {
       .catch(console.error)
   }, [])
 
-  // Restore collapse state for the displayed week
-  useEffect(() => {
-    const saved = localStorage.getItem(`reflect-collapsed-${targetMonday}`)
-    setCollapsedGroups(saved ? new Set(JSON.parse(saved) as string[]) : new Set())
-  }, [targetMonday])
-
   useEffect(() => {
     if (!persistReady.current) return
     const memberships = [...groups.entries()].map(([key, groupId]) => {
@@ -68,6 +62,12 @@ export function ReflectView({ rows, now }: ReflectViewProps) {
   const todayKey = dateKeyFromDate(now)
   const currentMonday = getMondayOfWeek(todayKey)
   const targetMonday = addDays(currentMonday, weekOffset * 7)
+
+  // Restore collapse state for the displayed week (must be after targetMonday is computed)
+  useEffect(() => {
+    const saved = localStorage.getItem(`reflect-collapsed-${targetMonday}`)
+    setCollapsedGroups(saved ? new Set(JSON.parse(saved) as string[]) : new Set())
+  }, [targetMonday])
   const targetSunday = addDays(targetMonday, 6)
   const weekLabel = formatWeekLabel(targetMonday)
 
