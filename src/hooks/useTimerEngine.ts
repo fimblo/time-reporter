@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AppState, UUID } from '../types'
 import { cloneAppState, findActiveInterval, nowIso } from '../lib/timeUtils'
 
@@ -9,6 +9,7 @@ export interface TimerEngine {
   startTimer: (taskId: UUID) => void
   pauseTimer: () => void
   updateState: (updater: (prev: AppState) => AppState) => void
+  replaceState: (newState: AppState) => void
 }
 
 const TICK_MS = 1000
@@ -84,6 +85,10 @@ export function useTimerEngine(
     })
   }
 
+  const replaceState = useCallback((newState: AppState) => {
+    setState(newState)
+  }, [])
+
   const active = findActiveInterval(state.tasks)
 
   return {
@@ -93,6 +98,7 @@ export function useTimerEngine(
     startTimer,
     pauseTimer,
     updateState,
+    replaceState,
   }
 }
 

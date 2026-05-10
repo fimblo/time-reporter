@@ -80,6 +80,17 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     }))
   }
 
+  // Reload state from server when tab regains focus (picks up external changes, e.g. xbar)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        loadState().then(engine.replaceState).catch(console.error)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [engine.replaceState])
+
   // Initial client fetch
   useEffect(() => {
     refreshClients().then((fetched) => {
