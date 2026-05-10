@@ -49,6 +49,12 @@ export function ReflectView({ rows, now }: ReflectViewProps) {
       .catch(console.error)
   }, [])
 
+  // Restore collapse state for the displayed week
+  useEffect(() => {
+    const saved = localStorage.getItem(`reflect-collapsed-${targetMonday}`)
+    setCollapsedGroups(saved ? new Set(JSON.parse(saved) as string[]) : new Set())
+  }, [targetMonday])
+
   useEffect(() => {
     if (!persistReady.current) return
     const memberships = [...groups.entries()].map(([key, groupId]) => {
@@ -248,11 +254,12 @@ export function ReflectView({ rows, now }: ReflectViewProps) {
                 if (gRows.length === 0) return null
                 const groupTotal = gRows.reduce((s, r) => s + r.minutes, 0)
                 const collapsed = collapsedGroups.has(gid)
-                const toggle = () => setCollapsedGroups((prev) => {
-                  const next = new Set(prev)
+                const toggle = () => {
+                  const next = new Set(collapsedGroups)
                   collapsed ? next.delete(gid) : next.add(gid)
-                  return next
-                })
+                  setCollapsedGroups(next)
+                  localStorage.setItem(`reflect-collapsed-${targetMonday}`, JSON.stringify([...next]))
+                }
                 const displayName = groupNames.get(gid) ?? `Group ${i + 1}`
                 return (
                   <Fragment key={gid}>
