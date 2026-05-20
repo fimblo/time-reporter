@@ -36,7 +36,6 @@ const baseProps = {
   now,
   onUpdateTask: vi.fn(),
   client: null,
-  onSetInvoicedThrough: vi.fn(),
   onExportCsv: vi.fn(),
 }
 

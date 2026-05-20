@@ -1,6 +1,6 @@
 import cors from 'cors'
 import express, { type Request, type Response } from 'express'
-import { createClient, loadAppState, loadClients, loadReportGroups, saveAppState, saveReportGroups, updateClient } from './db.ts'
+import { createClient, createInvoice, deleteInvoice, loadAppState, loadClients, loadReportGroups, saveAppState, saveReportGroups, updateClient, updateInvoice } from './db.ts'
 
 const PORT = Number.parseInt(process.env.PORT ?? '3001', 10)
 
@@ -36,6 +36,38 @@ app.post('/api/clients', (req: Request, res: Response) => {
 app.put('/api/clients/:id', (req: Request, res: Response) => {
   try {
     updateClient(req.params.id, req.body)
+    res.status(204).end()
+  } catch (err) {
+    console.error(err)
+    res.status(400).json({ error: err instanceof Error ? err.message : 'Bad request' })
+  }
+})
+
+// ── Invoices ─────────────────────────────────────────────────────────────────
+
+app.post('/api/clients/:id/invoices', (req: Request, res: Response) => {
+  try {
+    const invoice = createInvoice(req.params.id, req.body)
+    res.status(201).json(invoice)
+  } catch (err) {
+    console.error(err)
+    res.status(400).json({ error: err instanceof Error ? err.message : 'Bad request' })
+  }
+})
+
+app.patch('/api/clients/:id/invoices/:invoiceId', (req: Request, res: Response) => {
+  try {
+    updateInvoice(req.params.id, req.params.invoiceId, req.body)
+    res.status(204).end()
+  } catch (err) {
+    console.error(err)
+    res.status(400).json({ error: err instanceof Error ? err.message : 'Bad request' })
+  }
+})
+
+app.delete('/api/clients/:id/invoices/:invoiceId', (req: Request, res: Response) => {
+  try {
+    deleteInvoice(req.params.id, req.params.invoiceId)
     res.status(204).end()
   } catch (err) {
     console.error(err)

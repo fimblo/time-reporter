@@ -1,11 +1,21 @@
 export type UUID = string
 
+export interface Invoice {
+  id: UUID
+  clientId: UUID
+  sentDate: string    // YYYY-MM-DD
+  fromDate: string    // YYYY-MM-DD, inclusive
+  throughDate: string // YYYY-MM-DD, inclusive
+  minutes: number
+  notes?: string
+}
+
 export interface Client {
   id: UUID
   name: string
   color: string
   visibleInTabs: boolean
-  invoicedThrough?: string // YYYY-MM-DD, cumulative: this date and all earlier are invoiced
+  invoices: Invoice[]
 }
 
 export interface Interval {

@@ -4,8 +4,9 @@ import { TrackingView } from './components/TrackingView'
 import { HistoryView } from './components/HistoryView'
 import { ReflectView } from './components/ReflectView'
 import { ClientsView } from './components/ClientsView'
-import type { AppState, Client, Task } from './types'
-import { loadState, saveState, loadClients, updateClientApi } from './lib/storage'
+import { InvoicesView } from './components/InvoicesView'
+import type { AppState, Client, Invoice, Task } from './types'
+import { loadState, saveState, loadClients, updateClientApi, createInvoiceApi, updateInvoiceApi, deleteInvoiceApi } from './lib/storage'
 import { useTimerEngine } from './hooks/useTimerEngine'
 import {
   addDays,
@@ -19,10 +20,11 @@ import {
   formatMinutesAsHoursMinutes,
   formatSecondsAsHoursMinutesSeconds,
   getMondayOfWeek,
+  isDateInvoiced,
 } from './lib/timeUtils'
 import { buildCsvFromDailySummary } from './lib/csv'
 
-type View = 'tracking' | 'history' | 'reflect'
+type View = 'tracking' | 'history' | 'reflect' | 'invoices'
 
 // Outer shell: handles async initial load
 function App() {
@@ -163,7 +165,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
   }
 
   const uninvoicedMinutes = computeTotalMinutes(
-    summaryRows.filter((r) => !selectedClient?.invoicedThrough || r.date > selectedClient.invoicedThrough),
+    summaryRows.filter((r) => !isDateInvoiced(r.date, selectedClient?.invoices ?? [])),
   )
   const maxBarMinutes = Math.max(thisWeek.total, lastWeek.total, avgWeek?.total ?? 0)
   const barMax = maxBarMinutes === 0 ? 1 : maxBarMinutes * 1.1
@@ -209,9 +211,21 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
     }))
   }
 
-  async function handleSetInvoicedThrough(date: string | null) {
+  async function handleCreateInvoice(data: Omit<Invoice, 'id' | 'clientId'>) {
     if (!selectedClient) return
-    await updateClientApi(selectedClient.id, { invoicedThrough: date })
+    await createInvoiceApi(selectedClient.id, data)
+    await refreshClients()
+  }
+
+  async function handleUpdateInvoice(invoiceId: string, notes: string) {
+    if (!selectedClient) return
+    await updateInvoiceApi(selectedClient.id, invoiceId, { notes })
+    await refreshClients()
+  }
+
+  async function handleDeleteInvoice(invoiceId: string) {
+    if (!selectedClient) return
+    await deleteInvoiceApi(selectedClient.id, invoiceId)
     await refreshClients()
   }
 
@@ -257,6 +271,12 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
                 onClick={() => setView('reflect')}
               >
                 Reflect
+              </button>
+              <button
+                className={`view-tab${view === 'invoices' ? ' active' : ''}`}
+                onClick={() => setView('invoices')}
+              >
+                Invoices
               </button>
             </div>
             <div className="view-tabs-spacer" />
@@ -378,7 +398,9 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               onDeleteTask={handleDeleteTask}
             />
           ) : view === 'history' ? (
-            <HistoryView rows={summaryRows} tasks={clientTasks} now={now} onUpdateTask={handleUpdateTask} client={selectedClient} onSetInvoicedThrough={handleSetInvoicedThrough} onExportCsv={exportCsv} />
+            <HistoryView rows={summaryRows} tasks={clientTasks} now={now} onUpdateTask={handleUpdateTask} client={selectedClient} onExportCsv={exportCsv} />
+          ) : view === 'invoices' ? (
+            <InvoicesView rows={summaryRows} client={selectedClient} now={now} onCreateInvoice={handleCreateInvoice} onUpdateInvoice={handleUpdateInvoice} onDeleteInvoice={handleDeleteInvoice} />
           ) : (
             <ReflectView rows={summaryRows} now={now} />
           )}

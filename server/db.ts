@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import fs from 'node:fs'
 import path from 'node:path'
-import type { AppState, Client, DailyOverride, Interval, ReportGroupsData, Task } from '../src/types.ts'
+import type { AppState, Client, DailyOverride, Interval, Invoice, ReportGroupsData, Task } from '../src/types.ts'
 
 const DEFAULT_RELATIVE_DB = path.join('data', 'time-reporter.sqlite')
 
@@ -36,6 +36,18 @@ export function getDb(): Database.Database {
 function migrate(db: Database.Database): void {
   try { db.exec('ALTER TABLE daily_overrides ADD COLUMN set_at TEXT') } catch { /* already exists */ }
   try { db.exec('ALTER TABLE clients ADD COLUMN invoiced_through TEXT') } catch { /* already exists */ }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS invoices (
+      id TEXT PRIMARY KEY NOT NULL,
+      client_id TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+      sent_date TEXT NOT NULL,
+      from_date TEXT NOT NULL,
+      through_date TEXT NOT NULL,
+      minutes INTEGER NOT NULL,
+      notes TEXT
+    );
+  `)
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS clients (
@@ -98,23 +110,47 @@ interface ClientRow {
   name: string
   color: string
   visible_in_tabs: number
-  invoiced_through: string | null
 }
 
-function rowToClient(row: ClientRow): Client {
+interface InvoiceRow {
+  id: string
+  client_id: string
+  sent_date: string
+  from_date: string
+  through_date: string
+  minutes: number
+  notes: string | null
+}
+
+function rowToClient(row: ClientRow): Omit<Client, 'invoices'> {
   return {
     id: row.id,
     name: row.name,
     color: row.color,
     visibleInTabs: row.visible_in_tabs === 1,
-    ...(row.invoiced_through ? { invoicedThrough: row.invoiced_through } : {}),
+  }
+}
+
+function rowToInvoice(row: InvoiceRow): Invoice {
+  return {
+    id: row.id,
+    clientId: row.client_id,
+    sentDate: row.sent_date,
+    fromDate: row.from_date,
+    throughDate: row.through_date,
+    minutes: row.minutes,
+    ...(row.notes ? { notes: row.notes } : {}),
   }
 }
 
 export function loadClients(): Client[] {
   const db = getDb()
-  const rows = db.prepare('SELECT * FROM clients ORDER BY name').all() as ClientRow[]
-  return rows.map(rowToClient)
+  const clientRows = db.prepare('SELECT * FROM clients ORDER BY name').all() as ClientRow[]
+  const allInvoiceRows = db.prepare('SELECT * FROM invoices ORDER BY sent_date DESC').all() as InvoiceRow[]
+  return clientRows.map((row) => ({
+    ...rowToClient(row),
+    invoices: allInvoiceRows.filter((ir) => ir.client_id === row.id).map(rowToInvoice),
+  }))
 }
 
 export function createClient(body: unknown): Client {
@@ -128,9 +164,10 @@ export function createClient(body: unknown): Client {
   db.prepare(
     'INSERT INTO clients (id, name, color, visible_in_tabs) VALUES (?, ?, ?, ?)',
   ).run(id, o.name.trim(), o.color, visibleInTabs)
-  return rowToClient(
-    db.prepare('SELECT * FROM clients WHERE id = ?').get(id) as ClientRow,
-  )
+  return {
+    ...rowToClient(db.prepare('SELECT * FROM clients WHERE id = ?').get(id) as ClientRow),
+    invoices: [],
+  }
 }
 
 export function updateClient(id: string, body: unknown): void {
@@ -142,12 +179,47 @@ export function updateClient(id: string, body: unknown): void {
   const name = typeof o.name === 'string' ? o.name.trim() : existing.name
   const color = typeof o.color === 'string' ? o.color : existing.color
   const visibleInTabs = o.visibleInTabs === undefined ? existing.visible_in_tabs : (o.visibleInTabs ? 1 : 0)
-  const invoicedThrough = 'invoicedThrough' in o
-    ? (typeof o.invoicedThrough === 'string' ? o.invoicedThrough : null)
-    : existing.invoiced_through
   db.prepare(
-    'UPDATE clients SET name = ?, color = ?, visible_in_tabs = ?, invoiced_through = ? WHERE id = ?',
-  ).run(name, color, visibleInTabs, invoicedThrough, id)
+    'UPDATE clients SET name = ?, color = ?, visible_in_tabs = ? WHERE id = ?',
+  ).run(name, color, visibleInTabs, id)
+}
+
+// ── Invoice rows ─────────────────────────────────────────────────────────────
+
+export function createInvoice(clientId: string, body: unknown): Invoice {
+  if (body === null || typeof body !== 'object') throw new Error('Invalid body')
+  const o = body as Record<string, unknown>
+  if (typeof o.sentDate !== 'string') throw new Error('sentDate required')
+  if (typeof o.fromDate !== 'string') throw new Error('fromDate required')
+  if (typeof o.throughDate !== 'string') throw new Error('throughDate required')
+  if (typeof o.minutes !== 'number') throw new Error('minutes required')
+  const db = getDb()
+  const clientExists = db.prepare('SELECT id FROM clients WHERE id = ?').get(clientId)
+  if (!clientExists) throw new Error('Client not found')
+  const id = crypto.randomUUID()
+  const notes = typeof o.notes === 'string' && o.notes.trim() ? o.notes.trim() : null
+  db.prepare(
+    'INSERT INTO invoices (id, client_id, sent_date, from_date, through_date, minutes, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+  ).run(id, clientId, o.sentDate, o.fromDate, o.throughDate, o.minutes, notes)
+  return rowToInvoice(db.prepare('SELECT * FROM invoices WHERE id = ?').get(id) as InvoiceRow)
+}
+
+export function updateInvoice(clientId: string, invoiceId: string, body: unknown): void {
+  if (body === null || typeof body !== 'object') throw new Error('Invalid body')
+  const o = body as Record<string, unknown>
+  const db = getDb()
+  const existing = db.prepare('SELECT * FROM invoices WHERE id = ? AND client_id = ?').get(invoiceId, clientId) as InvoiceRow | undefined
+  if (!existing) throw new Error('Invoice not found')
+  const notes = 'notes' in o
+    ? (typeof o.notes === 'string' && o.notes.trim() ? o.notes.trim() : null)
+    : existing.notes
+  db.prepare('UPDATE invoices SET notes = ? WHERE id = ?').run(notes, invoiceId)
+}
+
+export function deleteInvoice(clientId: string, invoiceId: string): void {
+  const db = getDb()
+  const result = db.prepare('DELETE FROM invoices WHERE id = ? AND client_id = ?').run(invoiceId, clientId)
+  if (result.changes === 0) throw new Error('Invoice not found')
 }
 
 // ── App state ────────────────────────────────────────────────────────────────

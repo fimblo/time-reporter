@@ -1,4 +1,4 @@
-import type { AppState, DailySummaryRow, Interval, Task, UUID } from '../types'
+import type { AppState, DailySummaryRow, Interval, Invoice, Task, UUID } from '../types'
 
 export function formatWeekLabel(mondayStr: string): string {
   const [y, m, d] = mondayStr.split('-').map(Number)
@@ -266,5 +266,9 @@ export function computeStdDevMinutes(rows: DailySummaryRow[]): number {
   const avg = values.reduce((s, v) => s + v, 0) / values.length
   const variance = values.reduce((s, v) => s + (v - avg) ** 2, 0) / values.length
   return Math.round(Math.sqrt(variance))
+}
+
+export function isDateInvoiced(date: string, invoices: Invoice[]): boolean {
+  return invoices.some((inv) => date >= inv.fromDate && date <= inv.throughDate)
 }
 

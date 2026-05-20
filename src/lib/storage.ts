@@ -1,4 +1,4 @@
-import type { AppState, Client, ReportGroupsData } from '../types'
+import type { AppState, Client, Invoice, ReportGroupsData } from '../types'
 
 // Use VITE_API_URL when set explicitly (e.g. vite preview or a production deploy
 // pointing at a different host). In normal `npm run dev` use, leave it unset:
@@ -29,12 +29,45 @@ export async function createClientApi(data: { name: string; color: string }): Pr
 
 export async function updateClientApi(
   id: string,
-  data: Partial<{ name: string; color: string; visibleInTabs: boolean; invoicedThrough: string | null }>,
+  data: Partial<{ name: string; color: string; visibleInTabs: boolean }>,
 ): Promise<void> {
   const res = await fetch(`${BASE}/api/clients/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
+
+export async function createInvoiceApi(
+  clientId: string,
+  data: Omit<Invoice, 'id' | 'clientId'>,
+): Promise<Invoice> {
+  const res = await fetch(`${BASE}/api/clients/${clientId}/invoices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json() as Promise<Invoice>
+}
+
+export async function updateInvoiceApi(
+  clientId: string,
+  invoiceId: string,
+  data: { notes: string },
+): Promise<void> {
+  const res = await fetch(`${BASE}/api/clients/${clientId}/invoices/${invoiceId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
+
+export async function deleteInvoiceApi(clientId: string, invoiceId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/clients/${clientId}/invoices/${invoiceId}`, {
+    method: 'DELETE',
   })
   if (!res.ok) throw new Error(await res.text())
 }

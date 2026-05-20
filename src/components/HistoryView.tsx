@@ -9,6 +9,7 @@ import {
   formatMinutesAsHoursMinutes,
   formatWeekLabel,
   getMondayOfWeek,
+  isDateInvoiced,
 } from '../lib/timeUtils'
 
 interface HistoryViewProps {
@@ -17,7 +18,6 @@ interface HistoryViewProps {
   now: Date
   onUpdateTask: (task: Task) => void
   client: Client | null
-  onSetInvoicedThrough: (date: string | null) => void
   onExportCsv: () => void
 }
 
@@ -30,7 +30,7 @@ interface EditState {
 }
 
 
-export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, onSetInvoicedThrough, onExportCsv }: HistoryViewProps) {
+export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, onExportCsv }: HistoryViewProps) {
   const [editing, setEditing] = useState<EditState | null>(null)
 
   // Filter out 0-minute entries (deleted/zeroed rows)
@@ -40,7 +40,7 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
   const activeDays = computeActiveDays(rows)
   const avgMinutes = computeDailyAverageMinutes(rows)
   const uninvoicedMinutes = computeTotalMinutes(
-    rows.filter((r) => !client?.invoicedThrough || r.date > client.invoicedThrough),
+    rows.filter((r) => !isDateInvoiced(r.date, client?.invoices ?? [])),
   )
 
   // Current week stats (Mon–today)
@@ -223,7 +223,7 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
             </thead>
             <tbody>
               {(() => {
-                const invoicedThrough = client?.invoicedThrough
+                const clientInvoices = client?.invoices ?? []
                 let separatorInserted = false
                 return weekKeys.map((monday) => {
                   const weekRows = weekMap.get(monday)!
@@ -237,7 +237,7 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
                     </tr>
                   )
                   for (const row of weekRows) {
-                    const isInvoiced = !!invoicedThrough && row.date <= invoicedThrough
+                    const isInvoiced = isDateInvoiced(row.date, clientInvoices)
                     if (isInvoiced && !separatorInserted) {
                       separatorInserted = true
                       items.push(
@@ -246,23 +246,10 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
                         </tr>
                       )
                     }
-                    const isBoundary = row.date === invoicedThrough
                     items.push(
                       <tr key={`${row.date}-${row.taskId}`} className={`detail-row${isInvoiced ? ' detail-row--invoiced' : ''}`}>
                         <td className="invoice-col">
-                          <input
-                            type="checkbox"
-                            className="invoice-checkbox"
-                            checked={isInvoiced}
-                            title={isInvoiced ? (isBoundary ? 'Click to unmark invoice boundary' : 'Invoiced') : 'Mark this and earlier as invoiced'}
-                            onChange={() => {
-                              if (isBoundary) {
-                                onSetInvoicedThrough(null)
-                              } else if (!isInvoiced) {
-                                onSetInvoicedThrough(row.date)
-                              }
-                            }}
-                          />
+                          {isInvoiced && <span className="invoice-check" title="Invoiced">✓</span>}
                         </td>
                         <td>{row.date}</td>
                         <td>{row.client || 'No client'}</td>
