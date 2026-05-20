@@ -40,9 +40,10 @@ interface ClientsViewProps {
   onRefresh: () => Promise<void>
   onClientCreated?: (client: Client) => void
   onClientRenamed?: (oldName: string, newName: string) => void
+  onBackup?: () => void
 }
 
-export function ClientsView({ clients, onRefresh, onClientCreated, onClientRenamed }: ClientsViewProps) {
+export function ClientsView({ clients, onRefresh, onClientCreated, onClientRenamed, onBackup }: ClientsViewProps) {
   const [newName, setNewName] = useState('')
   const [newColor, setNewColor] = useState(COLOR_PALETTE[0])
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -80,6 +81,16 @@ export function ClientsView({ clients, onRefresh, onClientCreated, onClientRenam
 
   return (
     <div className="clients-view">
+      <section className="panel">
+        <div className="panel-header">
+          <h3>Backup</h3>
+          <button className="btn-export" onClick={onBackup} disabled={!onBackup}>
+            Download all as CSV
+          </button>
+        </div>
+        <p className="admin-note">All clients and all time entries in one file.</p>
+      </section>
+
       <section className="panel">
         <h3>Add client</h3>
         <form onSubmit={handleAdd} className="add-client-form">

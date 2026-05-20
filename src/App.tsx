@@ -121,6 +121,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
   )
 
   const summaryRows = useMemo(() => buildDailySummary(clientTasks, now), [clientTasks, now])
+  const allSummaryRows = useMemo(() => buildDailySummary(state.tasks, now), [state.tasks, now])
 
   const todayKey = dateKeyFromDate(now)
   const thisWeekMonday = getMondayOfWeek(todayKey)
@@ -172,6 +173,21 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
   const lastWeekBarPct = (lastWeek.total / barMax) * 100
   const thisWeekBarPct = (thisWeek.total / barMax) * 100
   const avgWeekBarPct = avgWeek ? (avgWeek.total / barMax) * 100 : null
+
+  function handleBackup() {
+    if (allSummaryRows.length === 0) return
+    const csv = buildCsvFromDailySummary(allSummaryRows)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    const ts = new Date().toISOString().slice(0, 10)
+    link.download = `time-reporter-backup-${ts}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
 
   function exportCsv() {
     if (summaryRows.length === 0) return
@@ -242,7 +258,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
   }
 
   const pageTitle = showClients
-    ? 'Manage clients'
+    ? 'Settings'
     : view === 'tracking'
     ? selectedClient?.name ?? 'Tracking'
     : selectedClient?.name ?? 'History'
@@ -255,7 +271,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
       <div className="view-tabs">
         <span className="app-title">Time Reporter</span>
         {showClients ? (
-          <span className="view-tabs-title">Manage clients</span>
+          <span className="view-tabs-title">Settings</span>
         ) : selectedClient ? (
           <>
             <span className="view-tabs-title" style={{ color: accentColor }}>{selectedClient.name}</span>
@@ -319,7 +335,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
             onClick={() => setShowClients(true)}
           >
             <span className="client-dot client-dot--manage" />
-            <span>Manage clients</span>
+            <span>Settings</span>
           </button>
         </nav>
 
@@ -376,12 +392,13 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
               onRefresh={refreshClients}
               onClientCreated={handleClientCreated}
               onClientRenamed={handleClientRenamed}
+              onBackup={handleBackup}
             />
           ) : !selectedClient ? (
             <p className="empty" style={{ padding: '1rem' }}>
               No client selected. Add one in{' '}
               <button className="link-button" onClick={() => setShowClients(true)}>
-                Manage clients
+                Settings
               </button>
               .
             </p>

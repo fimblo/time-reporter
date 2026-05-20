@@ -799,6 +799,12 @@ input[type="number"] { width: 72px; }
   gap: 1rem;
 }
 
+.admin-note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-3);
+}
+
 .add-client-form {
   display: flex;
   flex-direction: column;
