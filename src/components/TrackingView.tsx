@@ -41,6 +41,7 @@ export function TrackingView(props: TrackingViewProps) {
   const [startRunning, setStartRunning] = useState(true)
   const [editingTask, setEditingTask] = useState<EditableTask | null>(null)
   const [newDateInput, setNewDateInput] = useState(yesterdayKey)
+  const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null)
 
   const today = dateKeyFromDate(now)
 
@@ -172,7 +173,9 @@ export function TrackingView(props: TrackingViewProps) {
                       <button onClick={() => onStartTimer(task.id)}>Start</button>
                     )}
                     <button onClick={() => openEdit(task)}>Edit</button>
-                    <button onClick={() => onDeleteTask(task.id)}>Delete</button>
+                    <button onClick={(e) => {
+                      if (e.shiftKey) { onDeleteTask(task.id) } else { setPendingDeleteTaskId(task.id) }
+                    }}>Delete</button>
                   </div>
                 </li>
               )
@@ -180,6 +183,21 @@ export function TrackingView(props: TrackingViewProps) {
           </ul>
         )}
       </section>
+
+      {pendingDeleteTaskId && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <h3>Delete task?</h3>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this task? This cannot be undone.</p>
+            </div>
+            <div className="modal-footer">
+              <button type="button" onClick={() => setPendingDeleteTaskId(null)}>Cancel</button>
+              <button type="button" onClick={() => { onDeleteTask(pendingDeleteTaskId); setPendingDeleteTaskId(null) }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editingTask && (
         <div className="modal-backdrop">

@@ -67,17 +67,48 @@ describe('HistoryView', () => {
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
   })
 
-  it('Delete calls onUpdateTask with a 0-minute override for that date', () => {
+  it('Delete button shows confirmation modal instead of deleting immediately', () => {
+    const onUpdateTask = vi.fn()
+    const row = makeRow({ date: '2026-04-21', minutes: 60 })
+    render(<HistoryView {...baseProps} rows={[row]} tasks={[makeTask()]} onUpdateTask={onUpdateTask} />)
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    expect(onUpdateTask).not.toHaveBeenCalled()
+    expect(screen.getByText(/are you sure/i)).toBeInTheDocument()
+  })
+
+  it('confirming deletion calls onUpdateTask with a 0-minute override for that date', () => {
     const onUpdateTask = vi.fn()
     const row = makeRow({ date: '2026-04-21', minutes: 60 })
     const task = makeTask()
     render(<HistoryView {...baseProps} rows={[row]} tasks={[task]} onUpdateTask={onUpdateTask} />)
-    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    // After the modal opens there are two Delete buttons: the row one [0] and the modal confirm one [1]
+    fireEvent.click(screen.getAllByRole('button', { name: /^delete$/i })[1])
     expect(onUpdateTask).toHaveBeenCalledOnce()
     const updated: Task = onUpdateTask.mock.calls[0][0]
     const override = updated.overrides?.find((o) => o.date === '2026-04-21')
     expect(override?.minutesOverride).toBe(0)
     expect(override?.setAt).toBeUndefined()
+  })
+
+  it('cancelling deletion modal does not call onUpdateTask', () => {
+    const onUpdateTask = vi.fn()
+    const row = makeRow({ date: '2026-04-21', minutes: 60 })
+    render(<HistoryView {...baseProps} rows={[row]} tasks={[makeTask()]} onUpdateTask={onUpdateTask} />)
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(onUpdateTask).not.toHaveBeenCalled()
+    expect(screen.queryByText(/are you sure/i)).not.toBeInTheDocument()
+  })
+
+  it('shift-click on Delete skips the modal and calls onUpdateTask directly', () => {
+    const onUpdateTask = vi.fn()
+    const row = makeRow({ date: '2026-04-21', minutes: 60 })
+    const task = makeTask()
+    render(<HistoryView {...baseProps} rows={[row]} tasks={[task]} onUpdateTask={onUpdateTask} />)
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }), { shiftKey: true })
+    expect(onUpdateTask).toHaveBeenCalledOnce()
+    expect(screen.queryByText(/are you sure/i)).not.toBeInTheDocument()
   })
 
   it('Edit opens a modal pre-filled with the row values', () => {

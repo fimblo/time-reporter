@@ -32,6 +32,7 @@ interface EditState {
 
 export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, onExportCsv }: HistoryViewProps) {
   const [editing, setEditing] = useState<EditState | null>(null)
+  const [pendingDeleteRow, setPendingDeleteRow] = useState<DailySummaryRow | null>(null)
 
   // Filter out 0-minute entries (deleted/zeroed rows)
   const rows = allRows.filter((r) => r.minutes > 0)
@@ -257,7 +258,9 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
                         <td>{formatMinutesAsHoursMinutes(row.minutes)}</td>
                         <td className="row-actions">
                           <button className="btn-row-action" onClick={() => openEdit(row)}>Edit</button>
-                          <button className="btn-row-action btn-row-delete" onClick={() => handleDelete(row)}>Delete</button>
+                          <button className="btn-row-action btn-row-delete" onClick={(e) => {
+                            if (e.shiftKey) { handleDelete(row) } else { setPendingDeleteRow(row) }
+                          }}>Delete</button>
                         </td>
                       </tr>
                     )
@@ -269,6 +272,21 @@ export function HistoryView({ rows: allRows, tasks, now, onUpdateTask, client, o
           </table>
         )}
       </section>
+
+      {pendingDeleteRow && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <h3>Delete entry?</h3>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this entry? This cannot be undone.</p>
+            </div>
+            <div className="modal-footer">
+              <button type="button" onClick={() => setPendingDeleteRow(null)}>Cancel</button>
+              <button type="button" onClick={() => { handleDelete(pendingDeleteRow); setPendingDeleteRow(null) }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editing && (
         <div className="modal-backdrop" onClick={() => setEditing(null)}>

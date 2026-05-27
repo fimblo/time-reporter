@@ -88,7 +88,7 @@ describe('TrackingView', () => {
     expect(laterText).toMatch(/\d+(h|m)/)
   })
 
-  it('calls onDeleteTask with task id when Delete is clicked', () => {
+  it('Delete button shows confirmation modal instead of deleting immediately', () => {
     const task: Task = {
       id: 'task-to-delete',
       client: 'Acme',
@@ -99,8 +99,60 @@ describe('TrackingView', () => {
     }
     const onDeleteTask = vi.fn()
     render(<TrackingView {...baseProps} tasks={[task]} onDeleteTask={onDeleteTask} />)
-    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    expect(onDeleteTask).not.toHaveBeenCalled()
+    expect(screen.getByText(/are you sure/i)).toBeInTheDocument()
+  })
+
+  it('confirming deletion in modal calls onDeleteTask and closes modal', () => {
+    const task: Task = {
+      id: 'task-to-delete',
+      client: 'Acme',
+      topic: 'Coaching',
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      intervals: [],
+    }
+    const onDeleteTask = vi.fn()
+    render(<TrackingView {...baseProps} tasks={[task]} onDeleteTask={onDeleteTask} />)
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    // After the modal opens there are two Delete buttons: the task row one [0] and the modal confirm one [1]
+    fireEvent.click(screen.getAllByRole('button', { name: /^delete$/i })[1])
     expect(onDeleteTask).toHaveBeenCalledWith('task-to-delete')
+    expect(screen.queryByText(/are you sure/i)).not.toBeInTheDocument()
+  })
+
+  it('cancelling deletion modal does not call onDeleteTask', () => {
+    const task: Task = {
+      id: 'task-to-delete',
+      client: 'Acme',
+      topic: 'Coaching',
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      intervals: [],
+    }
+    const onDeleteTask = vi.fn()
+    render(<TrackingView {...baseProps} tasks={[task]} onDeleteTask={onDeleteTask} />)
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(onDeleteTask).not.toHaveBeenCalled()
+    expect(screen.queryByText(/are you sure/i)).not.toBeInTheDocument()
+  })
+
+  it('shift-click on Delete skips the modal and calls onDeleteTask directly', () => {
+    const task: Task = {
+      id: 'task-to-delete',
+      client: 'Acme',
+      topic: 'Coaching',
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      intervals: [],
+    }
+    const onDeleteTask = vi.fn()
+    render(<TrackingView {...baseProps} tasks={[task]} onDeleteTask={onDeleteTask} />)
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }), { shiftKey: true })
+    expect(onDeleteTask).toHaveBeenCalledWith('task-to-delete')
+    expect(screen.queryByText(/are you sure/i)).not.toBeInTheDocument()
   })
 
   it('each task row has a Delete button', () => {
