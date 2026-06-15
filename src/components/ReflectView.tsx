@@ -305,10 +305,10 @@ export function ReflectView({ rows, now }: ReflectViewProps) {
                 value={nameInput}
                 onChange={(e) => { setNameInput(e.target.value); setHighlightedIndex(-1) }}
                 onKeyDown={(e) => {
-                  if (e.key === 'ArrowDown' || (e.key === 'j' && !e.metaKey && !e.ctrlKey && !e.altKey)) {
+                  if (e.key === 'ArrowDown' || (e.key === 'j' && !e.metaKey && !e.ctrlKey && !e.altKey && suggestions.length > 0)) {
                     e.preventDefault()
                     setHighlightedIndex((i) => Math.min(i + 1, suggestions.length - 1))
-                  } else if (e.key === 'ArrowUp' || (e.key === 'k' && !e.metaKey && !e.ctrlKey && !e.altKey)) {
+                  } else if (e.key === 'ArrowUp' || (e.key === 'k' && !e.metaKey && !e.ctrlKey && !e.altKey && suggestions.length > 0)) {
                     e.preventDefault()
                     setHighlightedIndex((i) => Math.max(i - 1, -1))
                   } else if (e.key === 'Enter') {
