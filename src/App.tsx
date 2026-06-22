@@ -8,6 +8,7 @@ import { InvoicesView } from './components/InvoicesView'
 import type { AppState, Client, Invoice, Task } from './types'
 import { loadState, saveState, loadClients, updateClientApi, createInvoiceApi, updateInvoiceApi, deleteInvoiceApi } from './lib/storage'
 import { useTimerEngine } from './hooks/useTimerEngine'
+import { useBackendHealth } from './hooks/useBackendHealth'
 import {
   addDays,
   buildDailySummary,
@@ -57,6 +58,7 @@ function App() {
 
 // Inner shell: owns all app logic once data is loaded
 function AppLoaded({ initialState }: { initialState: AppState }) {
+  const backendOnline = useBackendHealth()
   const [view, setView] = useState<View>('tracking')
   const [showClients, setShowClients] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
@@ -267,6 +269,11 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
 
   return (
     <div className="app-root" style={{ '--accent': accentColor } as React.CSSProperties}>
+      {!backendOnline && (
+        <div className="backend-offline-banner">
+          Backend is not running — start the server with <code>npm start</code>
+        </div>
+      )}
       {/* Full-width top bar — sits above sidebar + main */}
       <div className="view-tabs">
         <span className="app-title">Time Reporter</span>

@@ -49,6 +49,22 @@
   background: var(--bg);
 }
 
+.backend-offline-banner {
+  background: #cc241d;
+  color: #fbf1c7;
+  text-align: center;
+  padding: 6px 12px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.backend-offline-banner code {
+  font-family: var(--font-mono, monospace);
+  background: rgba(0,0,0,0.25);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
 .app-body {
   flex: 1;
   display: flex;
