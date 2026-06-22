@@ -9,17 +9,21 @@ Track work by client and topic throughout the day, review daily and weekly summa
 | | |
 |---|---|
 | ![Tracking page — start and stop timers per task](docs/assets/tt-tracking-page.png) | ![History page — bar chart and full history with edit/delete](docs/assets/tt-overview-page.png) |
-| ![Reflect page — drag tasks into groups for weekly review](docs/assets/tt-report-page.png) | ![Manage clients — add and configure clients](docs/assets/tt-manage-clients.png) |
+| ![Reflect page — drag tasks into groups for weekly review](docs/assets/tt-report-page.png) | ![Settings page — manage clients and download backup CSV](docs/assets/tt-manage-clients.png) |
 
 ## Features
 
 - **Client-focused** — switch between clients in the sidebar; each client has its own colour and history
-- **Interval tracking** — start and stop a timer; intervals are stored and aggregated by day
+- **Interval tracking** — start and stop a timer per task; click a task row to toggle it; intervals are stored and aggregated by day
 - **Manual overrides** — adjust reported time for any day directly in the edit dialog; subsequent timer use adds on top
-- **History** — weekly bar chart and a full history table grouped by week, with edit, delete, and CSV export per client
-- **Reflect** — weekly view for reviewing work; drag entries onto each other to form named groups, collapsible and persisted per week
-- **Invoice tracking** — mark a date as invoiced; entries at or before that date are dimmed
+- **History** — weekly bar chart and a full history table grouped by week, with uninvoiced-hours total, edit, delete, and CSV export per client
+- **Reflect** — weekly view for reviewing work; drag entries onto each other to form named groups, collapsible and persisted per week; use arrow keys or j/k to navigate name suggestions
+- **Invoice history** — record invoices per client with a date range (from/through), sent date, total minutes, and optional notes; invoiced entries are dimmed in the History view and the sidebar shows remaining uninvoiced hours
+- **Settings** — add, rename, and recolour clients; toggle which clients appear in the tab bar; download a full CSV backup of all clients and time entries
+- **Delete confirmation** — deleting a task or history entry shows a confirmation modal; hold Shift while clicking Delete to skip it
 - **macOS menu bar** — an [xbar](https://xbarapp.com) plugin (`scripts/time-reporter.5s.sh`) shows the active task and elapsed time; click to pause or start a recent task
+- **Active timer indicator** — the top bar shows the running task name and today's elapsed time across all views
+- **Backend health check** — a red banner appears at the top of the app if the backend is not reachable
 
 ## Requirements
 
