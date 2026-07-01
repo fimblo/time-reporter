@@ -101,7 +101,9 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
       if (fetched.length === 0) {
         setShowClients(true)
       } else {
-        const first = fetched.find((c) => c.visibleInTabs) ?? fetched[0]
+        const saved = localStorage.getItem('selectedClientId')
+        const restored = saved ? fetched.find((c) => c.id === saved) : null
+        const first = restored ?? fetched.find((c) => c.visibleInTabs) ?? fetched[0]
         setSelectedClientId(first.id)
       }
     })
@@ -109,6 +111,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
 
   function handleClientCreated(client: Client) {
     setSelectedClientId(client.id)
+    localStorage.setItem('selectedClientId', client.id)
     setShowClients(false)
     setView('tracking')
   }
@@ -256,6 +259,7 @@ function AppLoaded({ initialState }: { initialState: AppState }) {
 
   function selectClient(clientId: string) {
     setSelectedClientId(clientId)
+    localStorage.setItem('selectedClientId', clientId)
     setShowClients(false)
   }
 
