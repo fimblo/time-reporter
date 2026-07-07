@@ -160,6 +160,11 @@ export function TrackingView(props: TrackingViewProps) {
                     <div className="task-title">
                       <span className="task-topic">{task.topic || 'No topic'}</span>
                     </div>
+                    {task.notes && (
+                      <div className="task-note-preview">
+                        {task.notes.split('\n')[0].slice(0, 60) + (task.notes.split('\n')[0].length > 60 || task.notes.includes('\n') ? '…' : '')}
+                      </div>
+                    )}
                     <div className="task-time">
                       {isActive
                         ? `${formatSecondsAsHoursMinutesSeconds(computeSecondsToday(task, today, now))} today`
@@ -209,6 +214,17 @@ export function TrackingView(props: TrackingViewProps) {
                 <input
                   value={editingTask.localTopic}
                   onChange={(e) => setEditingTask({ ...editingTask, localTopic: e.target.value })}
+                />
+              </label>
+
+              <label>
+                <span>Notes</span>
+                <textarea
+                  className="task-notes-input"
+                  value={editingTask.notes ?? ''}
+                  onChange={(e) => setEditingTask({ ...editingTask, notes: e.target.value || undefined })}
+                  placeholder="Add notes…"
+                  rows={3}
                 />
               </label>
 

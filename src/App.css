@@ -594,6 +594,35 @@ input[type="number"] { width: 72px; }
 .task-title { display: flex; gap: 0.5rem; font-size: 0.9rem; }
 .task-topic  { color: var(--text-2); }
 
+.task-note-preview {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 32ch;
+  font-style: italic;
+}
+
+.task-notes-input {
+  width: 100%;
+  resize: vertical;
+  font-family: var(--font);
+  font-size: 0.875rem;
+  color: var(--text);
+  background: #3c3836;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 0.4rem 0.6rem;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.task-notes-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
 .task-time {
   font-size: 0.8rem;
   color: var(--text-3);
